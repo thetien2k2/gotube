@@ -1,4 +1,6 @@
 gotubeplaylist
 channels.json
 playlist.m3u
+playlist.json
 test.http
+video.json

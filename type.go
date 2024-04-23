@@ -2,6 +2,8 @@ package main
 
 const (
 	channelsList = "channels.json"
+	videosJson   = "videos.json"
+	playlistFile = "playlist.m3u"
 )
 
 var (
@@ -14,10 +16,14 @@ var (
 		"yt.artemislena.eu",
 		"yt.cdaut.de",
 	}
-	channels    []Channel
-	err         error
-	instance    string
-	instanceTry int
+	channels     []Channel
+	videos       []Video
+	err          error
+	instance     string
+	instanceTry  int
+	toggleDate   = true
+	toggleView   = true
+	toggleLength = true
 )
 
 type Channel struct {
