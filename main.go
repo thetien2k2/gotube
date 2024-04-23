@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-
-	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
 )
 
 // https://docs.invidious.io/api/#get-apiv1stats
@@ -23,43 +20,7 @@ func main() {
 	// UI to interact with playlist
 	if len(args) == 1 {
 		readVideosList()
-		app := tview.NewApplication()
-		list := tview.NewList()
-		renderPlaylist(list)
-		app.SetRoot(list, true)
-		app.SetFocus(list)
-		app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			switch event.Key() {
-			case tcell.KeyCtrlA:
-				sortVideosByDate(toggleDate)
-				toggleDate = !toggleDate
-				list.Clear()
-				renderPlaylist(list)
-			case tcell.KeyCtrlS:
-				sortVideosByMostView(toggleView)
-				toggleView = !toggleView
-				list.Clear()
-				renderPlaylist(list)
-			case tcell.KeyCtrlD:
-				sortVideosByLength(toggleLength)
-				toggleLength = !toggleLength
-				list.Clear()
-				renderPlaylist(list)
-			case tcell.KeyCtrlU:
-				list.Clear()
-				list.AddItem("scanning videos from channels", "", rune(0), nil)
-				scanVideos()
-				list.Clear()
-				renderPlaylist(list)
-			case tcell.KeyCtrlE:
-				exportM3U()
-			}
-			return event
-		})
-		err = app.Run()
-		if err != nil {
-			panic(err)
-		}
+		renderApp()
 	}
 
 	// add new channel to list
@@ -73,9 +34,15 @@ func main() {
 	}
 }
 
-func mpv(vid string) {
-	cmd := exec.Command("mpv", "https://www.youtube.com/watch?v="+vid)
+func mpv(v Video) {
+	app.Stop()
+	fmt.Printf("playing %v", v.Title)
+	cmd := exec.Command("mpv", "https://www.youtube.com/watch?v="+v.VideoID)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 	cmd.Run()
+	renderApp()
 }
 
 func changeInstance() {
@@ -83,7 +50,6 @@ func changeInstance() {
 		fmt.Println("tried all instance")
 		os.Exit(1)
 	}
-	// instance = invidious[rand.IntN(len(invidious))]
 	instance = invidious[instanceTry]
 	fmt.Println("invidious instance:", instance)
 }

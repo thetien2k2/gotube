@@ -1,5 +1,7 @@
 package main
 
+import "github.com/rivo/tview"
+
 const (
 	channelsList = "channels.json"
 	videosJson   = "videos.json"
@@ -24,6 +26,8 @@ var (
 	toggleDate   = true
 	toggleView   = true
 	toggleLength = true
+	app          *tview.Application
+	list         *tview.List
 )
 
 type Channel struct {

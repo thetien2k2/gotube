@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -104,16 +105,31 @@ func getVideos(id string) (vs Videos) {
 func scanVideos() {
 	readChannels()
 	videos = []Video{}
+	app.Stop()
+	fmt.Println("scanning videos from channels")
+	var (
+		wg sync.WaitGroup
+		mu sync.Mutex
+	)
 	for _, c := range channels {
-		vs := getVideos(c.Id)
-		for _, v := range vs.Videos {
-			if v.IsUpcoming || v.Premium {
-				continue
+		wg.Add(1)
+		go func(c Channel) {
+			defer wg.Done()
+			fmt.Println(c.Name)
+			vs := getVideos(c.Id)
+			for _, v := range vs.Videos {
+				if v.IsUpcoming || v.Premium {
+					continue
+				}
+				mu.Lock()
+				videos = append(videos, v)
+				mu.Unlock()
 			}
-			videos = append(videos, v)
-		}
+		}(c)
 	}
+	wg.Wait()
 	saveVideosList()
+	renderApp()
 }
 
 func saveVideosList() {
