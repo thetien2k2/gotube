@@ -36,7 +36,8 @@ func main() {
 
 func mpv(v Video) {
 	app.Stop()
-	fmt.Printf("playing %v", v.Title)
+	fmt.Println()
+	fmt.Printf("🔊 playing %v\n", v.Title)
 	cmd := exec.Command("mpv", "https://www.youtube.com/watch?v="+v.VideoID)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
