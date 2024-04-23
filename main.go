@@ -39,13 +39,18 @@ func main() {
 		}
 		readChannels()
 		var (
-			list   []string
-			videos []Video
+			playlist []string
+			videos   []Video
 		)
 		for _, c := range channels {
 			fmt.Println(c.Name)
 			vs := getVideos(c.Id)
-			videos = append(videos, vs.Videos...)
+			for _, v := range vs.Videos {
+				if v.LengthSeconds == 0 {
+					continue
+				}
+				videos = append(videos, v)
+			}
 		}
 		switch sortby {
 		case "view":
@@ -65,17 +70,19 @@ func main() {
 				return videos[i].Published > videos[j].Published
 			})
 		}
+		playlist = append(playlist, "#EXTM3U")
 		for _, v := range videos {
-			fmt.Println(v.Title)
-			fmt.Printf("-- %v, %v, %v\n", v.ViewCountText, v.PublishedText, v.LengthSeconds)
-			list = append(list, "https://www.youtube.com/watch?v="+v.VideoID)
+			playlist = append(playlist, fmt.Sprintf("#EXTINF: %v", v.Title))
+			playlist = append(playlist, fmt.Sprintf("#EXTINF: %v, %v, %v", v.ViewCountText, v.PublishedText, v.LengthSeconds))
+			playlist = append(playlist, "https://www.youtube.com/watch?v="+v.VideoID)
+			playlist = append(playlist, "")
 		}
-		f, err := os.Create("playlist.txt")
+		f, err := os.Create("playlist.m3u")
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer f.Close()
-		for _, l := range list {
+		for _, l := range playlist {
 			_, err = f.WriteString(l + "\n")
 			if err != nil {
 				log.Fatal(err)
