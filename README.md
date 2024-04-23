@@ -11,6 +11,7 @@ Frist, add a channel to subscripbed list (file channels.json)
 - Ctrl-S, toggle sort by view count
 - Ctrl-D, toggle sort by video length
 - Ctrl-E, export list to file playlist.m3u
+- Ctrl-U, update videos from channels
 - Ctrl-C, exit app
 
 

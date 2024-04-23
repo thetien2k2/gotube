@@ -4,3 +4,4 @@ playlist.m3u
 playlist.json
 test.http
 video.json
+*.sh
