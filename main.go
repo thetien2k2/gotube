@@ -46,7 +46,7 @@ func main() {
 			fmt.Println(c.Name)
 			vs := getVideos(c.Id)
 			for _, v := range vs.Videos {
-				if v.LengthSeconds == 0 {
+				if v.IsUpcoming || v.Premium {
 					continue
 				}
 				videos = append(videos, v)
