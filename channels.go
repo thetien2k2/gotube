@@ -182,10 +182,11 @@ func readVideosList() {
 	}
 }
 
-func exportM3U() {
+func exportM3U(index int, location string) {
 	var strs []string
 	strs = append(strs, "#EXTM3U")
-	for _, v := range videos {
+	for i := index; i < len(videos); i++ {
+		v := videos[i]
 		d := time.Duration(v.LengthSeconds * 1000000000)
 		since := time.Since(time.Unix(int64(v.Published), 0)).Round(time.Minute)
 		strs = append(strs, fmt.Sprintf("#EXTINF: %v", v.Title))
@@ -193,7 +194,7 @@ func exportM3U() {
 		strs = append(strs, "https://www.youtube.com/watch?v="+v.VideoID)
 		strs = append(strs, "")
 	}
-	f, err := os.Create(playlistFile)
+	f, err := os.Create(location)
 	if err != nil {
 		panic(err)
 	}

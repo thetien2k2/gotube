@@ -32,7 +32,7 @@ func renderApp() {
 			selected = 0
 			scanVideos()
 		case tcell.KeyCtrlE:
-			exportM3U()
+			exportM3U(0, playlistFile)
 		}
 		return event
 	})

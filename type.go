@@ -6,6 +6,7 @@ const (
 	channelsList = "channels.json"
 	videosJson   = "videos.json"
 	playlistFile = "playlist.m3u"
+	tmpPlaylist  = "/tmp/gotubeplaylist.m3u"
 )
 
 var (

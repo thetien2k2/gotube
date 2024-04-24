@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
-	"strings"
 )
 
 // https://docs.invidious.io/api/#get-apiv1stats
@@ -49,11 +46,11 @@ func main() {
 
 func mpv(v Video) {
 	app.Stop()
+	exportM3U(selected, tmpPlaylist)
 	fmt.Println()
-	fmt.Printf("🔊 %v\n", v.Title)
-	cmd := exec.Command("mpv", "https://www.youtube.com/watch?v="+v.VideoID)
-	output := new(bytes.Buffer)
-	cmd.Stdout = output
+	fmt.Println("🔊", v.Title)
+	cmd := exec.Command("mpv", fmt.Sprintf("--playlist=%v", tmpPlaylist))
+	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	err = cmd.Start()
@@ -61,17 +58,7 @@ func mpv(v Video) {
 		panic(err)
 	}
 	cmd.Wait()
-	reason, err := regexp.Compile(`Exiting...\s\(.*\)`)
-	if err != nil {
-		panic(err)
-	}
-	r := reason.FindString(output.String())
-	r = strings.Replace(r, "Exiting... (", "", -1)
-	r = strings.Replace(r, ")", "", -1)
-	if r == "End of file" {
-		selected++
-		mpv(videos[selected])
-	}
+
 	renderApp()
 }
 
