@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,10 +15,11 @@ import (
 func addChannel(url string) {
 	client := resty.New()
 	var resp *resty.Response
-	resp, err = client.R().Get("https://" + instance + "/api/v1/search?q=" + url)
+	resp, err = client.R().Get("https://" + invidious[instanceIndex] + "/api/v1/search?q=" + url)
 	if err != nil {
 		fmt.Println("rest client err:", err)
-		os.Exit(1)
+		changeInstance()
+		addChannel(url)
 	}
 	if resp.StatusCode() != 200 {
 		fmt.Println("  Status Code:", resp.StatusCode())
@@ -54,6 +56,28 @@ func addChannel(url string) {
 	}
 }
 
+func deleteChannel(url string) {
+	readChannels()
+	var (
+		ns    []Channel
+		found bool
+	)
+	for _, c := range channels {
+		if strings.EqualFold(c.Url, url) {
+			found = true
+		} else {
+			ns = append(ns, c)
+		}
+	}
+	channels = ns
+	saveChannels()
+	if found {
+		fmt.Println("channel", url, "deleted")
+	} else {
+		fmt.Println("channel", url, "do no existed")
+	}
+}
+
 func readChannels() {
 	if _, err := os.Stat(channelsList); err != nil {
 		saveChannels()
@@ -82,7 +106,7 @@ func saveChannels() {
 func getVideos(id string) (vs Videos) {
 	client := resty.New()
 	var resp *resty.Response
-	resp, err = client.R().Get("https://" + instance + "/api/v1/channels/" + id + "/videos")
+	resp, err = client.R().Get("https://" + invidious[instanceIndex] + "/api/v1/channels/" + id + "/videos")
 	if err != nil {
 		fmt.Println("rest client err:", err)
 		os.Exit(1)
@@ -163,7 +187,7 @@ func exportM3U() {
 	strs = append(strs, "#EXTM3U")
 	for _, v := range videos {
 		d := time.Duration(v.LengthSeconds * 1000000000)
-		since := time.Since(time.Unix(int64(v.Published), 0)).Round(time.Second)
+		since := time.Since(time.Unix(int64(v.Published), 0)).Round(time.Minute)
 		strs = append(strs, fmt.Sprintf("#EXTINF: %v", v.Title))
 		strs = append(strs, fmt.Sprintf("#EXTINF: %v, %v, since %v ago, %v", v.Author, v.ViewCountText, since, d.String()))
 		strs = append(strs, "https://www.youtube.com/watch?v="+v.VideoID)

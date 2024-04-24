@@ -18,16 +18,17 @@ var (
 		"yt.artemislena.eu",
 		"yt.cdaut.de",
 	}
-	channels     []Channel
-	videos       []Video
-	err          error
-	instance     string
-	instanceTry  int
-	toggleDate   = true
-	toggleView   = true
-	toggleLength = true
-	app          *tview.Application
-	selected     int
+	channels       []Channel
+	videos         []Video
+	err            error
+	instanceIndex  int
+	instanceChange int
+	instanceRetry  = len(invidious) * 3
+	toggleDate     = true
+	toggleView     = true
+	toggleLength   = true
+	app            *tview.Application
+	selected       int
 )
 
 type Channel struct {

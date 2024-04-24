@@ -48,9 +48,8 @@ func renderPlaylist() {
 	app.SetFocus(list)
 	for i, v := range videos {
 		d := time.Duration(v.LengthSeconds * 1000000000)
-		since := time.Since(time.Unix(int64(v.Published), 0)).Round(time.Second)
 		list.AddItem(fmt.Sprintf("%v| %s", i, v.Title),
-			fmt.Sprintf("       %v, %v, since %v ago, %s", v.Author, v.ViewCountText, since, d.String()), rune(0), func() {
+			fmt.Sprintf("       %v, %v, %s, %s", v.Author, v.ViewCountText, v.PublishedText, d.String()), rune(0), func() {
 				selected = list.GetCurrentItem()
 				mpv(v)
 			})

@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
+	"strings"
 )
 
 // https://docs.invidious.io/api/#get-apiv1stats
@@ -13,7 +16,6 @@ func main() {
 		fmt.Println("invidious instances do not existed")
 		os.Exit(1)
 	}
-	instance = invidious[0]
 
 	args := os.Args
 
@@ -32,25 +34,56 @@ func main() {
 		}
 		addChannel(url)
 	}
+
+	// add new channel to list
+	if len(args) == 3 && args[1] == "delete" {
+		url := args[2]
+		if url == "" {
+			fmt.Println("empty channel url")
+			os.Exit(1)
+		}
+		deleteChannel(url)
+	}
+
 }
 
 func mpv(v Video) {
 	app.Stop()
 	fmt.Println()
-	fmt.Printf("🔊 playing %v\n", v.Title)
+	fmt.Printf("🔊 %v\n", v.Title)
 	cmd := exec.Command("mpv", "https://www.youtube.com/watch?v="+v.VideoID)
-	cmd.Stdout = os.Stdout
+	output := new(bytes.Buffer)
+	cmd.Stdout = output
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-	cmd.Run()
+	err = cmd.Start()
+	if err != nil {
+		panic(err)
+	}
+	cmd.Wait()
+	reason, err := regexp.Compile(`Exiting...\s\(.*\)`)
+	if err != nil {
+		panic(err)
+	}
+	r := reason.FindString(output.String())
+	r = strings.Replace(r, "Exiting... (", "", -1)
+	r = strings.Replace(r, ")", "", -1)
+	if r == "End of file" {
+		selected++
+		mpv(videos[selected])
+	}
 	renderApp()
 }
 
 func changeInstance() {
-	if instanceTry > len(invidious)-1 {
-		fmt.Println("tried all instance")
+	if instanceChange > (len(invidious)-1)*instanceRetry {
+		fmt.Println("tried all instances")
 		os.Exit(1)
 	}
-	instance = invidious[instanceTry]
-	fmt.Println("invidious instance:", instance)
+	instanceChange++
+	instanceIndex++
+	if instanceIndex == len(invidious) {
+		instanceIndex = 0
+	}
+	fmt.Println("invidious instance:", instanceIndex)
 }
