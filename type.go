@@ -27,7 +27,7 @@ var (
 	toggleView   = true
 	toggleLength = true
 	app          *tview.Application
-	list         *tview.List
+	selected     int
 )
 
 type Channel struct {

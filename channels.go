@@ -163,8 +163,9 @@ func exportM3U() {
 	strs = append(strs, "#EXTM3U")
 	for _, v := range videos {
 		d := time.Duration(v.LengthSeconds * 1000000000)
+		since := time.Since(time.Unix(int64(v.Published), 0)).Round(time.Second)
 		strs = append(strs, fmt.Sprintf("#EXTINF: %v", v.Title))
-		strs = append(strs, fmt.Sprintf("#EXTINF: %v, %v, %v", v.ViewCountText, v.PublishedText, d.String()))
+		strs = append(strs, fmt.Sprintf("#EXTINF: %v, %v, since %v ago, %v", v.Author, v.ViewCountText, since, d.String()))
 		strs = append(strs, "https://www.youtube.com/watch?v="+v.VideoID)
 		strs = append(strs, "")
 	}
