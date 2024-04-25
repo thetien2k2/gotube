@@ -6,7 +6,7 @@ const (
 	channelsList = "channels.json"
 	videosJson   = "videos.json"
 	playlistFile = "playlist.m3u"
-	tmpPlaylist  = "/tmp/gotubeplaylist.m3u"
+	socket       = "/tmp/mpvsocket"
 )
 
 var (
@@ -28,8 +28,11 @@ var (
 	toggleDate     = true
 	toggleView     = true
 	toggleLength   = true
+	toggleChannel  = true
 	app            *tview.Application
 	selected       int
+	continuous     bool
+	sortby         string
 )
 
 type Channel struct {

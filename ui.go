@@ -15,24 +15,24 @@ func renderApp() {
 		switch event.Key() {
 		case tcell.KeyCtrlA:
 			selected = 0
-			sortVideosByDate(toggleDate)
-			toggleDate = !toggleDate
-			renderPlaylist()
+			sortVideosByDate()
 		case tcell.KeyCtrlS:
 			selected = 0
-			sortVideosByMostView(toggleView)
-			toggleView = !toggleView
-			renderPlaylist()
+			sortVideosByMostView()
 		case tcell.KeyCtrlD:
 			selected = 0
-			sortVideosByLength(toggleLength)
-			toggleLength = !toggleLength
-			renderPlaylist()
+			sortVideosByLength()
+		case tcell.KeyCtrlF:
+			selected = 0
+			sortVideosByChannel()
 		case tcell.KeyCtrlU:
 			selected = 0
 			scanVideos()
 		case tcell.KeyCtrlE:
 			exportM3U(0, playlistFile)
+		case tcell.KeyCtrlR:
+			continuous = !continuous
+			renderPlaylist()
 		}
 		return event
 	})
@@ -44,6 +44,11 @@ func renderApp() {
 
 func renderPlaylist() {
 	list := tview.NewList()
+	list.SetBorder(true)
+	if sortby == "" {
+		sortby = "natural"
+	}
+	list.SetTitle(fmt.Sprintf(" gotubeplaylist, sort by: %v, continuous playing: %v ", sortby, continuous))
 	app.SetRoot(list, true)
 	app.SetFocus(list)
 	for i, v := range videos {

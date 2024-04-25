@@ -207,20 +207,54 @@ func exportM3U(index int, location string) {
 	}
 }
 
-func sortVideosByLength(shortFirst bool) {
+func sortVideosByLength() {
 	sort.Slice(videos, func(i, j int) bool {
-		return shortFirst == (videos[i].LengthSeconds > videos[j].LengthSeconds)
+		return toggleLength == (videos[i].LengthSeconds < videos[j].LengthSeconds)
 	})
+	if toggleLength {
+		sortby = "longest"
+	} else {
+		sortby = "shortest"
+	}
+	renderPlaylist()
+	toggleLength = !toggleLength
 }
 
-func sortVideosByMostView(moreFirst bool) {
+func sortVideosByMostView() {
 	sort.Slice(videos, func(i, j int) bool {
-		return moreFirst == (videos[i].ViewCount > videos[j].ViewCount)
+		return toggleView == (videos[i].ViewCount > videos[j].ViewCount)
 	})
+	if toggleView {
+		sortby = "most view"
+	} else {
+		sortby = "less view"
+	}
+	renderPlaylist()
+	toggleView = !toggleView
 }
 
-func sortVideosByDate(newFirst bool) {
+func sortVideosByDate() {
 	sort.Slice(videos, func(i, j int) bool {
-		return newFirst == (videos[i].Published > videos[j].Published)
+		return toggleDate == (videos[i].Published > videos[j].Published)
 	})
+	if toggleDate {
+		sortby = "newest"
+	} else {
+		sortby = "oldest"
+	}
+	renderPlaylist()
+	toggleDate = !toggleDate
+}
+
+func sortVideosByChannel() {
+	sort.Slice(videos, func(i, j int) bool {
+		return toggleChannel == (videos[i].Author < videos[j].Author)
+	})
+	if toggleChannel {
+		sortby = "channel A-Z"
+	} else {
+		sortby = "channel Z-A"
+	}
+	renderPlaylist()
+	toggleChannel = !toggleChannel
 }

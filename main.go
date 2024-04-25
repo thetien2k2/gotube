@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
+
+	"github.com/DexterLB/mpvipc"
 )
 
 // https://docs.invidious.io/api/#get-apiv1stats
@@ -46,20 +49,48 @@ func main() {
 
 func mpv(v Video) {
 	app.Stop()
-	exportM3U(selected, tmpPlaylist)
-	fmt.Println()
-	fmt.Println("🔊", v.Title)
-	cmd := exec.Command("mpv", fmt.Sprintf("--playlist=%v", tmpPlaylist))
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	err = cmd.Start()
+	done := make(chan string)
+	endReason := ""
+	go func() {
+		fmt.Println()
+		fmt.Println("🔊", v.Title)
+		cmd := exec.Command("mpv", fmt.Sprintf("https://www.youtube.com/watch?v=%v", v.VideoID), fmt.Sprintf("--input-ipc-server=%v", socket))
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		err = cmd.Start()
+		if err != nil {
+			panic(err)
+		}
+		cmd.Wait()
+		done <- "done"
+	}()
+	time.Sleep(time.Second)
+	conn := mpvipc.NewConnection(socket)
+	err := conn.Open()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
-	cmd.Wait()
-
-	renderApp()
+	defer conn.Close()
+	if err == nil {
+		events, stopListening := conn.NewEventListener()
+		go func() {
+			conn.WaitUntilClosed()
+			stopListening <- struct{}{}
+		}()
+		for event := range events {
+			if event.Name == "end-file" {
+				endReason = event.Reason
+			}
+		}
+	}
+	<-done
+	if endReason == "eof" && continuous {
+		selected++
+		mpv(videos[selected])
+	} else {
+		renderApp()
+	}
 }
 
 func changeInstance() {
