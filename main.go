@@ -87,15 +87,19 @@ func mpv(v Video) {
 	<-done
 	if endReason == "eof" && continuous {
 		selected++
+		if selected > len(videos)-1 {
+			selected = 0
+		}
 		mpv(videos[selected])
 	} else {
 		renderApp()
 	}
 }
 
-func changeInstance() {
+func changeInstance() error {
 	if instanceChange > (len(invidious)-1)*instanceRetry {
-		fmt.Println("tried all instances")
+		app.Stop()
+		fmt.Println("tried all instances but no answer")
 		os.Exit(1)
 	}
 	instanceChange++
@@ -103,5 +107,5 @@ func changeInstance() {
 	if instanceIndex == len(invidious) {
 		instanceIndex = 0
 	}
-	fmt.Println("invidious instance:", instanceIndex)
+	return nil
 }

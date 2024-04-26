@@ -108,12 +108,11 @@ func getVideos(id string) (vs Videos) {
 	var resp *resty.Response
 	resp, err = client.R().Get("https://" + invidious[instanceIndex] + "/api/v1/channels/" + id + "/videos")
 	if err != nil {
-		fmt.Println("rest client err:", err)
-		os.Exit(1)
+		fmt.Println(err)
+		changeInstance()
+		getVideos(id)
 	}
 	if resp.StatusCode() != 200 {
-		fmt.Println("  Status Code:", resp.StatusCode())
-		fmt.Println("  Status     :", resp.Status())
 		changeInstance()
 		getVideos(id)
 	} else {
@@ -127,10 +126,10 @@ func getVideos(id string) (vs Videos) {
 }
 
 func scanVideos() {
+	fmt.Println("updating video list from channels")
+	app.Stop()
 	readChannels()
 	videos = []Video{}
-	app.Stop()
-	fmt.Println("scanning videos from channels")
 	var (
 		wg sync.WaitGroup
 		mu sync.Mutex
@@ -139,7 +138,6 @@ func scanVideos() {
 		wg.Add(1)
 		go func(c Channel) {
 			defer wg.Done()
-			fmt.Println(c.Name)
 			vs := getVideos(c.Id)
 			for _, v := range vs.Videos {
 				if v.IsUpcoming || v.Premium {
@@ -149,6 +147,7 @@ func scanVideos() {
 				videos = append(videos, v)
 				mu.Unlock()
 			}
+			fmt.Println(c.Name, "...done")
 		}(c)
 	}
 	wg.Wait()
@@ -182,7 +181,7 @@ func readVideosList() {
 	}
 }
 
-func exportM3U(index int, location string) {
+func exportM3U(index int, location string) error {
 	var strs []string
 	strs = append(strs, "#EXTM3U")
 	for i := index; i < len(videos); i++ {
@@ -196,15 +195,16 @@ func exportM3U(index int, location string) {
 	}
 	f, err := os.Create(location)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer f.Close()
 	for _, l := range strs {
 		_, err = f.WriteString(l + "\n")
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
+	return nil
 }
 
 func sortVideosByLength() {
@@ -248,7 +248,11 @@ func sortVideosByDate() {
 
 func sortVideosByChannel() {
 	sort.Slice(videos, func(i, j int) bool {
-		return toggleChannel == (videos[i].Author < videos[j].Author)
+		if videos[i].Author == videos[j].Author {
+			return videos[i].Published > videos[j].Published
+		} else {
+			return toggleChannel == (videos[i].Author < videos[j].Author)
+		}
 	})
 	if toggleChannel {
 		sortby = "channel A-Z"

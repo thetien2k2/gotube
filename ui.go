@@ -10,7 +10,9 @@ import (
 
 func renderApp() {
 	app = tview.NewApplication()
+	pages = tview.NewPages()
 	renderPlaylist()
+	pages.HidePage("modal")
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlA:
@@ -28,14 +30,46 @@ func renderApp() {
 		case tcell.KeyCtrlU:
 			selected = 0
 			scanVideos()
+			renderPlaylist()
+			// modal := tview.NewModal()
+			// pages.AddPage("modal", modal, false, true)
+			// pages.ShowPage("modal")
+			// modal.SetText("video list updated")
+			// modal.AddButtons([]string{"OK"})
+			// modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			// 	if buttonLabel == "OK" {
+			// 		pages.HidePage("modal")
+			// 	}
+			// })
+			// app.SetFocus(modal)
 		case tcell.KeyCtrlE:
-			exportM3U(0, playlistFile)
+			err = exportM3U(0, playlistFile)
+			msg := ""
+			if err != nil {
+				msg = err.Error()
+			} else {
+				msg = "export completed"
+			}
+			modal := tview.NewModal()
+			pages.AddPage("modal", modal, false, true)
+			pages.ShowPage("modal")
+			modal.SetText(msg)
+			modal.AddButtons([]string{"OK"})
+			modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+				if buttonLabel == "OK" {
+					pages.HidePage("modal")
+				}
+			})
+			app.SetFocus(modal)
 		case tcell.KeyCtrlR:
 			continuous = !continuous
+			selected = list.GetCurrentItem()
 			renderPlaylist()
 		}
 		return event
 	})
+	pages.HidePage("modal")
+	app.SetRoot(pages, true).SetFocus(list)
 	err = app.Run()
 	if err != nil {
 		panic(err)
@@ -43,14 +77,13 @@ func renderApp() {
 }
 
 func renderPlaylist() {
-	list := tview.NewList()
+	list = tview.NewList()
 	list.SetBorder(true)
 	if sortby == "" {
 		sortby = "natural"
 	}
 	list.SetTitle(fmt.Sprintf(" gotubeplaylist, sort by: %v, continuous playing: %v ", sortby, continuous))
-	app.SetRoot(list, true)
-	app.SetFocus(list)
+	pages.AddPage("list", list, true, true)
 	for i, v := range videos {
 		d := time.Duration(v.LengthSeconds * 1000000000)
 		list.AddItem(fmt.Sprintf("%v| %s", i, v.Title),

@@ -30,6 +30,8 @@ var (
 	toggleLength   = true
 	toggleChannel  = true
 	app            *tview.Application
+	list           *tview.List
+	pages          *tview.Pages
 	selected       int
 	continuous     bool
 	sortby         string
