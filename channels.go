@@ -56,14 +56,14 @@ func addChannel(url string) {
 	}
 }
 
-func deleteChannel(url string) {
+func deleteChannel(id string) {
 	readChannels()
 	var (
 		ns    []Channel
 		found bool
 	)
 	for _, c := range channels {
-		if strings.EqualFold(c.Url, url) {
+		if strings.EqualFold(c.Url, id) || strings.EqualFold(c.Id, id) {
 			found = true
 		} else {
 			ns = append(ns, c)
@@ -72,23 +72,32 @@ func deleteChannel(url string) {
 	channels = ns
 	saveChannels()
 	if found {
-		fmt.Println("channel", url, "deleted")
+		fmt.Println("channel with url/id", id, "deleted")
 	} else {
-		fmt.Println("channel", url, "do no existed")
+		fmt.Println("channel with url/id", id, "do no existed")
 	}
 }
 
 func readChannels() {
-	if _, err := os.Stat(channelsList); err != nil {
+	if _, err := os.Stat(dataDir + "/" + channelsList); err != nil {
 		saveChannels()
 	}
-	file, err := os.ReadFile(channelsList)
+	file, err := os.ReadFile(dataDir + "/" + channelsList)
 	if err != nil {
 		panic(err)
 	}
 	err = json.Unmarshal(file, &channels)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func listChannels() {
+	readChannels()
+	fmt.Println("Channels in the list:")
+	fmt.Println("---------------------")
+	for _, c := range channels {
+		fmt.Printf("url: %v | id: %v | name: %v\n", c.Url, c.Id, c.Name)
 	}
 }
 
@@ -160,18 +169,19 @@ func saveVideosList() {
 	if err != nil {
 		panic(err)
 	}
-	err = os.WriteFile(videosJson, jdata, 0755)
+	err = os.WriteFile(dataDir+"/"+videosJson, jdata, 0755)
 	if err != nil {
 		panic(err)
 	}
 }
 
+// https://docs.invidious.io/api/#get-apiv1stats
 func readVideosList() {
-	if _, err := os.Stat(videosJson); err != nil {
+	if _, err := os.Stat(dataDir + "/" + videosJson); err != nil {
 		scanVideos()
 		return
 	}
-	file, err := os.ReadFile(videosJson)
+	file, err := os.ReadFile(dataDir + "/" + videosJson)
 	if err != nil {
 		panic(err)
 	}

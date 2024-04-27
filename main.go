@@ -9,17 +9,16 @@ import (
 	"github.com/DexterLB/mpvipc"
 )
 
-// https://docs.invidious.io/api/#get-apiv1stats
-
 func main() {
 	if len(invidious) == 0 {
 		fmt.Println("invidious instances do not existed")
 		os.Exit(1)
 	}
 
+	prepareDataDir()
 	args := os.Args
 
-	// UI to interact with playlist
+	// Main UI
 	if len(args) == 1 {
 		readVideosList()
 		renderApp()
@@ -35,7 +34,7 @@ func main() {
 		addChannel(url)
 	}
 
-	// add new channel to list
+	// delete channel from list
 	if len(args) == 3 && args[1] == "delete" {
 		url := args[2]
 		if url == "" {
@@ -45,6 +44,10 @@ func main() {
 		deleteChannel(url)
 	}
 
+	// list channels
+	if len(args) == 2 && args[1] == "list" {
+		listChannels()
+	}
 }
 
 func mpv(v Video) {
@@ -108,4 +111,22 @@ func changeInstance() error {
 		instanceIndex = 0
 	}
 	return nil
+}
+
+func prepareDataDir() {
+	dataDir, err = os.UserConfigDir()
+	if err != nil {
+		dataDir, err = os.UserHomeDir()
+		if err != nil {
+			fmt.Println("unable locate user's home directory or config directory")
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+	dataDir += "/gotubeplaylist"
+	err = os.MkdirAll(dataDir, 0755)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }

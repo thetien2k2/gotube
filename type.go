@@ -18,7 +18,10 @@ var (
 		"yewtu.be",
 		"yt.artemislena.eu",
 		"yt.cdaut.de",
+		"inv.in.projectsegfau.lt",
+		"invidious.perennialte.ch",
 	}
+	dataDir        string
 	channels       []Channel
 	videos         []Video
 	err            error
