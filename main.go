@@ -16,37 +16,31 @@ func main() {
 	}
 
 	prepareDataDir()
+
 	args := os.Args
 
-	// Main UI
-	if len(args) == 1 {
+	switch {
+	case len(args) == 1:
 		readVideosList()
 		renderApp()
-	}
-
-	// add new channel to list
-	if len(args) == 3 && args[1] == "add" {
+	case len(args) == 3 && args[1] == "add":
 		url := args[2]
 		if url == "" {
 			fmt.Println("empty channel url")
 			os.Exit(1)
 		}
 		addChannel(url)
-	}
-
-	// delete channel from list
-	if len(args) == 3 && args[1] == "delete" {
+	case len(args) == 3 && (args[1] == "delete" || args[1] == "rm"):
 		url := args[2]
 		if url == "" {
 			fmt.Println("empty channel url")
 			os.Exit(1)
 		}
 		deleteChannel(url)
-	}
-
-	// list channels
-	if len(args) == 2 && args[1] == "list" {
+	case len(args) == 2 && (args[1] == "list" || args[1] == "ls"):
 		listChannels()
+	default:
+		fmt.Println("unknown command")
 	}
 }
 

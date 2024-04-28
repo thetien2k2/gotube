@@ -29,19 +29,8 @@ func renderApp() {
 			sortVideosByChannel()
 		case tcell.KeyCtrlU:
 			selected = 0
+			sortby = ""
 			scanVideos()
-			renderPlaylist()
-			// modal := tview.NewModal()
-			// pages.AddPage("modal", modal, false, true)
-			// pages.ShowPage("modal")
-			// modal.SetText("video list updated")
-			// modal.AddButtons([]string{"OK"})
-			// modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			// 	if buttonLabel == "OK" {
-			// 		pages.HidePage("modal")
-			// 	}
-			// })
-			// app.SetFocus(modal)
 		case tcell.KeyCtrlE:
 			err = exportM3U(0, playlistFile)
 			msg := ""

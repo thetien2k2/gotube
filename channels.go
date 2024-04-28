@@ -13,6 +13,12 @@ import (
 )
 
 func addChannel(url string) {
+	err = readChannels()
+	if err != nil && err != errNoChannel {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	client := resty.New()
 	var resp *resty.Response
 	resp, err = client.R().Get("https://" + invidious[instanceIndex] + "/api/v1/search?q=" + url)
@@ -40,7 +46,6 @@ func addChannel(url string) {
 					Url:  r.ChannelHandle,
 					Id:   r.AuthorID,
 				}
-				readChannels()
 				for _, c := range channels {
 					if c.Id == cn.Id {
 						fmt.Println("channel existed in the list")
@@ -57,7 +62,11 @@ func addChannel(url string) {
 }
 
 func deleteChannel(id string) {
-	readChannels()
+	err = readChannels()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	var (
 		ns    []Channel
 		found bool
@@ -78,22 +87,30 @@ func deleteChannel(id string) {
 	}
 }
 
-func readChannels() {
+func readChannels() error {
 	if _, err := os.Stat(dataDir + "/" + channelsList); err != nil {
 		saveChannels()
 	}
 	file, err := os.ReadFile(dataDir + "/" + channelsList)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	err = json.Unmarshal(file, &channels)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	if len(channels) == 0 {
+		return errNoChannel
+	}
+	return nil
 }
 
 func listChannels() {
-	readChannels()
+	err = readChannels()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	fmt.Println("Channels in the list:")
 	fmt.Println("---------------------")
 	for _, c := range channels {
@@ -106,7 +123,7 @@ func saveChannels() {
 	if err != nil {
 		panic(err)
 	}
-	err = os.WriteFile(channelsList, jdata, 0755)
+	err = os.WriteFile(dataDir+"/"+channelsList, jdata, 0755)
 	if err != nil {
 		panic(err)
 	}
@@ -135,10 +152,18 @@ func getVideos(id string) (vs Videos) {
 }
 
 func scanVideos() {
-	fmt.Println("updating video list from channels")
-	app.Stop()
-	readChannels()
+	err = readChannels()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	if app != nil {
+		app.Stop()
+	}
 	videos = []Video{}
+
+	fmt.Println("updating video from channels")
+
 	var (
 		wg sync.WaitGroup
 		mu sync.Mutex

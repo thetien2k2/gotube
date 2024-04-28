@@ -1,6 +1,10 @@
 package main
 
-import "github.com/rivo/tview"
+import (
+	"fmt"
+
+	"github.com/rivo/tview"
+)
 
 const (
 	channelsList = "channels.json"
@@ -38,6 +42,7 @@ var (
 	selected       int
 	continuous     bool
 	sortby         string
+	errNoChannel   = fmt.Errorf("please add some channels first")
 )
 
 type Channel struct {

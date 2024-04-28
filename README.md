@@ -17,11 +17,13 @@ App use channel's url or id as idetity.
 ./gotubeplaylist add [channel's url or id]  
 example: ./gotubeplaylist add UCyJnvNM8SX3hiiRdEh6H9vw (get channel's url from https://www.youtube.com/channel/UCyJnvNM8SX3hiiRdEh6H9vw)
 
-- to list channel list  
-./gotubeplaylist list
+- to list added channels  
+./gotubeplaylist list   
+./gotubeplaylist ls 
 
 - to delete a channel from list  
-./gotubeplaylist delete [channel's url or id]
+./gotubeplaylist delete [channel's url or id]  
+./gotubeplaylist rm [channel's url or id]  
 
 ### playing videos
 ./gotubeplaylist
