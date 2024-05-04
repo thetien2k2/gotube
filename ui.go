@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -9,10 +10,10 @@ import (
 )
 
 func renderApp() {
+	if app != nil {
+		app.Stop()
+	}
 	app = tview.NewApplication()
-	pages = tview.NewPages()
-	renderPlaylist()
-	pages.HidePage("modal")
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlA:
@@ -32,24 +33,16 @@ func renderApp() {
 			sortby = ""
 			scanVideos()
 		case tcell.KeyCtrlE:
+			app.Stop()
 			err = exportM3U(0, playlistFile)
-			msg := ""
 			if err != nil {
-				msg = err.Error()
+				fmt.Println(err)
+				os.Exit(1)
 			} else {
-				msg = "export completed"
+				fmt.Println("export completed!")
+				time.Sleep(time.Second)
+				renderApp()
 			}
-			modal := tview.NewModal()
-			pages.AddPage("modal", modal, false, true)
-			pages.ShowPage("modal")
-			modal.SetText(msg)
-			modal.AddButtons([]string{"OK"})
-			modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-				if buttonLabel == "OK" {
-					pages.HidePage("modal")
-				}
-			})
-			app.SetFocus(modal)
 		case tcell.KeyCtrlR:
 			continuous = !continuous
 			selected = list.GetCurrentItem()
@@ -57,8 +50,10 @@ func renderApp() {
 		}
 		return event
 	})
-	pages.HidePage("modal")
-	app.SetRoot(pages, true).SetFocus(list)
+	if frame == nil {
+		renderPlaylist()
+	}
+	app.SetRoot(frame, true).SetFocus(frame)
 	err = app.Run()
 	if err != nil {
 		panic(err)
@@ -67,12 +62,9 @@ func renderApp() {
 
 func renderPlaylist() {
 	list = tview.NewList()
-	list.SetBorder(true)
 	if sortby == "" {
 		sortby = "natural"
 	}
-	list.SetTitle(fmt.Sprintf(" gotubeplaylist, sort by: %v, continuous playing: %v ", sortby, continuous))
-	pages.AddPage("list", list, true, true)
 	for i, v := range videos {
 		d := time.Duration(v.LengthSeconds * 1000000000)
 		list.AddItem(fmt.Sprintf("%v| %s", i, v.Title),
@@ -84,4 +76,11 @@ func renderPlaylist() {
 	if selected > 0 {
 		list.SetCurrentItem(selected)
 	}
+	frame = tview.NewFrame(list).
+		AddText(fmt.Sprintf("sort by: %v", sortby), true, tview.AlignLeft, tcell.ColorGray).
+		AddText("gotubeplaylist", true, tview.AlignCenter, tcell.ColorLightCyan).
+		AddText(fmt.Sprintf("continuous playing: %v", continuous), true, tview.AlignRight, tcell.ColorGray).
+		AddText("(u) scan new video | (e) export to m3u | (r) continuous playing | (c) quit", false, tview.AlignLeft, tcell.ColorGray).
+		AddText("sort: (a) date, (s) view, (d) length, (f) channel", false, tview.AlignLeft, tcell.ColorGray)
+	app.SetRoot(frame, true).SetFocus(frame)
 }

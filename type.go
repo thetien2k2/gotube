@@ -11,6 +11,7 @@ const (
 	videosJson   = "videos.json"
 	playlistFile = "playlist.m3u"
 	socket       = "/tmp/mpvsocket"
+	tmpPlaylist  = "/tmp/gotubeplaylist.m3u"
 )
 
 var (
@@ -38,7 +39,7 @@ var (
 	toggleChannel  = true
 	app            *tview.Application
 	list           *tview.List
-	pages          *tview.Pages
+	frame          *tview.Frame
 	selected       int
 	continuous     bool
 	sortby         string

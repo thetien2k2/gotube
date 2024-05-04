@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"time"
-
-	"github.com/DexterLB/mpvipc"
 )
 
 func main() {
@@ -47,11 +44,23 @@ func main() {
 func mpv(v Video) {
 	app.Stop()
 	done := make(chan string)
-	endReason := ""
+	// endReason := ""
+	if continuous {
+		err := exportM3U(selected, tmpPlaylist)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
 	go func() {
 		fmt.Println()
 		fmt.Println("🔊", v.Title)
-		cmd := exec.Command("mpv", fmt.Sprintf("https://www.youtube.com/watch?v=%v", v.VideoID), fmt.Sprintf("--input-ipc-server=%v", socket))
+		var cmd *exec.Cmd
+		if continuous {
+			cmd = exec.Command("mpv", fmt.Sprintf("--playlist=%s", tmpPlaylist), fmt.Sprintf("--input-ipc-server=%v", socket))
+		} else {
+			cmd = exec.Command("mpv", fmt.Sprintf("https://www.youtube.com/watch?v=%v", v.VideoID), fmt.Sprintf("--input-ipc-server=%v", socket))
+		}
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
@@ -62,35 +71,36 @@ func mpv(v Video) {
 		cmd.Wait()
 		done <- "done"
 	}()
-	time.Sleep(time.Second)
-	conn := mpvipc.NewConnection(socket)
-	err := conn.Open()
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer conn.Close()
-	if err == nil {
-		events, stopListening := conn.NewEventListener()
-		go func() {
-			conn.WaitUntilClosed()
-			stopListening <- struct{}{}
-		}()
-		for event := range events {
-			if event.Name == "end-file" {
-				endReason = event.Reason
-			}
-		}
-	}
+	// time.Sleep(time.Second)
+	// conn := mpvipc.NewConnection(socket)
+	// err := conn.Open()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// defer conn.Close()
+	// if err == nil {
+	// 	events, stopListening := conn.NewEventListener()
+	// 	go func() {
+	// 		conn.WaitUntilClosed()
+	// 		stopListening <- struct{}{}
+	// 	}()
+	// 	for event := range events {
+	// 		if event.Name == "end-file" {
+	// 			endReason = event.Reason
+	// 		}
+	// 	}
+	// }
 	<-done
-	if endReason == "eof" && continuous {
-		selected++
-		if selected > len(videos)-1 {
-			selected = 0
-		}
-		mpv(videos[selected])
-	} else {
-		renderApp()
-	}
+	renderApp()
+	// if endReason == "eof" && continuous {
+	// 	selected++
+	// 	if selected > len(videos)-1 {
+	// 		selected = 0
+	// 	}
+	// 	mpv(videos[selected])
+	// } else {
+	// 	renderApp()
+	// }
 }
 
 func changeInstance() error {
