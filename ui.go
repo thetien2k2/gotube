@@ -50,9 +50,7 @@ func renderApp() {
 		}
 		return event
 	})
-	if frame == nil {
-		renderPlaylist()
-	}
+	renderPlaylist()
 	app.SetRoot(frame, true).SetFocus(frame)
 	err = app.Run()
 	if err != nil {
