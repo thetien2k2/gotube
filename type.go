@@ -42,6 +42,7 @@ var (
 	frame          *tview.Frame
 	selected       int
 	continuous     bool
+	audioOnly      bool
 	sortby         string
 	errNoChannel   = fmt.Errorf("please add some channels first")
 )

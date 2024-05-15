@@ -47,6 +47,10 @@ func renderApp() {
 			continuous = !continuous
 			selected = list.GetCurrentItem()
 			renderPlaylist()
+		case tcell.KeyCtrlT:
+			audioOnly = !audioOnly
+			selected = list.GetCurrentItem()
+			renderPlaylist()
 		}
 		return event
 	})
@@ -74,11 +78,18 @@ func renderPlaylist() {
 	if selected > 0 {
 		list.SetCurrentItem(selected)
 	}
+	var txtcontinuos, txtao string
+	if continuous {
+		txtcontinuos = "[continuous playing]"
+	}
+	if audioOnly {
+		txtao = "[audio only]"
+	}
 	frame = tview.NewFrame(list).
 		AddText(fmt.Sprintf("sort by: %v", sortby), true, tview.AlignLeft, tcell.ColorGray).
 		AddText("gotubeplaylist", true, tview.AlignCenter, tcell.ColorLightCyan).
-		AddText(fmt.Sprintf("continuous playing: %v", continuous), true, tview.AlignRight, tcell.ColorGray).
-		AddText("(u) scan new video | (e) export to m3u | (r) continuous playing | (c) quit", false, tview.AlignLeft, tcell.ColorGray).
+		AddText(fmt.Sprintf("%v %v", txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
+		AddText("(u) scan new | (e) export | (r) continuous | (t) audio only | (c) quit", false, tview.AlignLeft, tcell.ColorGray).
 		AddText("sort: (a) date, (s) view, (d) length, (f) channel", false, tview.AlignLeft, tcell.ColorGray)
 	app.SetRoot(frame, true).SetFocus(frame)
 }

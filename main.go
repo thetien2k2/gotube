@@ -55,12 +55,21 @@ func mpv(v Video) {
 	go func() {
 		fmt.Println()
 		fmt.Println("🔊", v.Title)
-		var cmd *exec.Cmd
+		var (
+			cmd  *exec.Cmd
+			args []string
+		)
 		if continuous {
-			cmd = exec.Command("mpv", fmt.Sprintf("--playlist=%s", tmpPlaylist), fmt.Sprintf("--input-ipc-server=%v", socket))
+			args = append(args, fmt.Sprintf("--playlist=%s", tmpPlaylist))
+			// cmd = exec.Command("mpv", fmt.Sprintf("--playlist=%s", tmpPlaylist), fmt.Sprintf("--input-ipc-server=%v", socket))
 		} else {
-			cmd = exec.Command("mpv", fmt.Sprintf("https://www.youtube.com/watch?v=%v", v.VideoID), fmt.Sprintf("--input-ipc-server=%v", socket))
+			args = append(args, fmt.Sprintf("https://www.youtube.com/watch?v=%v", v.VideoID))
+			// cmd = exec.Command("mpv", fmt.Sprintf("https://www.youtube.com/watch?v=%v", v.VideoID), fmt.Sprintf("--input-ipc-server=%v", socket))
 		}
+		if audioOnly {
+			args = append(args, "--vid=no")
+		}
+		cmd = exec.Command("mpv", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
