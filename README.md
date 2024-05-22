@@ -30,14 +30,15 @@ example: ./gotubeplaylist add UCyJnvNM8SX3hiiRdEh6H9vw (get channel's url from h
 
 App functions:  
 - Enter, play video in mpv
-- Ctrl-A, toggle sort by publish date
-- Ctrl-S, toggle sort by view count
-- Ctrl-D, toggle sort by video length
-- Ctrl-F, toggle sort by channel name
-- Ctrl-E, export list to file playlist.m3u
-- Ctrl-R, toggle continuous playing (off by default)
-- Ctrl-U, update videos from channels
-- Ctrl-C, exit app
+- a, toggle sort by publish date
+- s, toggle sort by view count
+- d, toggle sort by video length
+- f, toggle sort by channel name
+- q, quit app
+- w, update videos from channels
+- e, export list to file playlist.m3u
+- r, toggle continuous playing (off by default)
+- t, audio only  
 
 When playing video in mpv, press q to quit mpv and come back to playlist
 

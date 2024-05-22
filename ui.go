@@ -15,24 +15,28 @@ func renderApp() {
 	}
 	app = tview.NewApplication()
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyCtrlA:
+		switch event.Rune() {
+		case rune('a'):
 			selected = 0
 			sortVideosByDate()
-		case tcell.KeyCtrlS:
+			toggleDate = !toggleDate
+		case rune('s'):
 			selected = 0
 			sortVideosByMostView()
-		case tcell.KeyCtrlD:
+			toggleView = !toggleView
+		case rune('d'):
 			selected = 0
 			sortVideosByLength()
-		case tcell.KeyCtrlF:
+			toggleLength = !toggleLength
+		case rune('f'):
 			selected = 0
 			sortVideosByChannel()
-		case tcell.KeyCtrlU:
+			toggleChannel = !toggleChannel
+		case rune('u'):
 			selected = 0
 			sortby = ""
 			scanVideos()
-		case tcell.KeyCtrlE:
+		case rune('w'):
 			app.Stop()
 			err = exportM3U(0, playlistFile)
 			if err != nil {
@@ -43,14 +47,17 @@ func renderApp() {
 				time.Sleep(time.Second)
 				renderApp()
 			}
-		case tcell.KeyCtrlR:
+		case rune('r'):
 			continuous = !continuous
 			selected = list.GetCurrentItem()
 			renderPlaylist()
-		case tcell.KeyCtrlT:
+		case rune('t'):
 			audioOnly = !audioOnly
 			selected = list.GetCurrentItem()
 			renderPlaylist()
+		case rune('q'):
+			app.Stop()
+			os.Exit(0)
 		}
 		return event
 	})
@@ -89,7 +96,7 @@ func renderPlaylist() {
 		AddText(fmt.Sprintf("sort by: %v", sortby), true, tview.AlignLeft, tcell.ColorGray).
 		AddText("gotubeplaylist", true, tview.AlignCenter, tcell.ColorLightCyan).
 		AddText(fmt.Sprintf("%v %v", txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
-		AddText("(u) scan new | (e) export | (r) continuous | (t) audio only | (c) quit", false, tview.AlignLeft, tcell.ColorGray).
-		AddText("sort: (a) date, (s) view, (d) length, (f) channel", false, tview.AlignLeft, tcell.ColorGray)
+		AddText("(q) quit | (w) scan new | (e) export | (r) continuous | (t) audio only", false, tview.AlignLeft, tcell.ColorGray).
+		AddText("toggle sort: (a) date, (s) view, (d) length, (f) channel", false, tview.AlignLeft, tcell.ColorGray)
 	app.SetRoot(frame, true).SetFocus(frame)
 }

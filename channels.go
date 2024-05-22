@@ -252,7 +252,6 @@ func sortVideosByLength() {
 		sortby = "shortest"
 	}
 	renderPlaylist()
-	toggleLength = !toggleLength
 }
 
 func sortVideosByMostView() {
@@ -265,7 +264,6 @@ func sortVideosByMostView() {
 		sortby = "less view"
 	}
 	renderPlaylist()
-	toggleView = !toggleView
 }
 
 func sortVideosByDate() {
@@ -278,7 +276,6 @@ func sortVideosByDate() {
 		sortby = "oldest"
 	}
 	renderPlaylist()
-	toggleDate = !toggleDate
 }
 
 func sortVideosByChannel() {
@@ -295,5 +292,4 @@ func sortVideosByChannel() {
 		sortby = "channel Z-A"
 	}
 	renderPlaylist()
-	toggleChannel = !toggleChannel
 }
