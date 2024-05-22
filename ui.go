@@ -32,11 +32,14 @@ func renderApp() {
 			selected = 0
 			sortVideosByChannel()
 			toggleChannel = !toggleChannel
-		case rune('u'):
+		case rune('q'):
+			app.Stop()
+			os.Exit(0)
+		case rune('w'):
 			selected = 0
 			sortby = ""
 			scanVideos()
-		case rune('w'):
+		case rune('e'):
 			app.Stop()
 			err = exportM3U(0, playlistFile)
 			if err != nil {
@@ -55,9 +58,6 @@ func renderApp() {
 			audioOnly = !audioOnly
 			selected = list.GetCurrentItem()
 			renderPlaylist()
-		case rune('q'):
-			app.Stop()
-			os.Exit(0)
 		}
 		return event
 	})
@@ -96,7 +96,7 @@ func renderPlaylist() {
 		AddText(fmt.Sprintf("sort by: %v", sortby), true, tview.AlignLeft, tcell.ColorGray).
 		AddText("gotubeplaylist", true, tview.AlignCenter, tcell.ColorLightCyan).
 		AddText(fmt.Sprintf("%v %v", txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
-		AddText("(q) quit | (w) scan new | (e) export | (r) continuous | (t) audio only", false, tview.AlignLeft, tcell.ColorGray).
+		AddText("(q) quit | (w) update | (e) export | (r) continuous | (t) audio only", false, tview.AlignLeft, tcell.ColorGray).
 		AddText("toggle sort: (a) date, (s) view, (d) length, (f) channel", false, tview.AlignLeft, tcell.ColorGray)
 	app.SetRoot(frame, true).SetFocus(frame)
 }

@@ -35,7 +35,7 @@ App functions:
 - d, toggle sort by video length
 - f, toggle sort by channel name
 - q, quit app
-- w, update videos from channels
+- w, update new videos from channels
 - e, export list to file playlist.m3u
 - r, toggle continuous playing (off by default)
 - t, audio only  
