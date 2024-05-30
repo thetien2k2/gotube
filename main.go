@@ -44,7 +44,7 @@ func main() {
 func mpv(v Video) {
 	app.Stop()
 	done := make(chan string)
-	// endReason := ""
+	fmt.Printf("\033]0;%s\007", v.Title)
 	if continuous {
 		err := exportM3U(selected, tmpPlaylist)
 		if err != nil {
@@ -61,10 +61,8 @@ func mpv(v Video) {
 		)
 		if continuous {
 			args = append(args, fmt.Sprintf("--playlist=%s", tmpPlaylist))
-			// cmd = exec.Command("mpv", fmt.Sprintf("--playlist=%s", tmpPlaylist), fmt.Sprintf("--input-ipc-server=%v", socket))
 		} else {
 			args = append(args, fmt.Sprintf("https://www.youtube.com/watch?v=%v", v.VideoID))
-			// cmd = exec.Command("mpv", fmt.Sprintf("https://www.youtube.com/watch?v=%v", v.VideoID), fmt.Sprintf("--input-ipc-server=%v", socket))
 		}
 		if audioOnly {
 			args = append(args, "--vid=no")
@@ -80,36 +78,9 @@ func mpv(v Video) {
 		cmd.Wait()
 		done <- "done"
 	}()
-	// time.Sleep(time.Second)
-	// conn := mpvipc.NewConnection(socket)
-	// err := conn.Open()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// defer conn.Close()
-	// if err == nil {
-	// 	events, stopListening := conn.NewEventListener()
-	// 	go func() {
-	// 		conn.WaitUntilClosed()
-	// 		stopListening <- struct{}{}
-	// 	}()
-	// 	for event := range events {
-	// 		if event.Name == "end-file" {
-	// 			endReason = event.Reason
-	// 		}
-	// 	}
-	// }
 	<-done
+	fmt.Print("\033]0;gotubeplaylist\007")
 	renderApp()
-	// if endReason == "eof" && continuous {
-	// 	selected++
-	// 	if selected > len(videos)-1 {
-	// 		selected = 0
-	// 	}
-	// 	mpv(videos[selected])
-	// } else {
-	// 	renderApp()
-	// }
 }
 
 func changeInstance() error {
