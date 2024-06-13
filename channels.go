@@ -242,23 +242,24 @@ func exportM3U(index int, location string) error {
 	return nil
 }
 
-func search(query, region string) {
+// https://docs.invidious.io/api/#get-apiv1search
+func search(query string) {
 	client := resty.New()
 	var resp *resty.Response
 	request := client.R()
 	request.SetQueryParam("q", query)
-	request.SetQueryParam("region", region)
+	request.SetQueryParam("type", "video")
 	resp, err = request.Get("https://" + invidious[instanceIndex] + "/api/v1/search?")
 	if err != nil {
 		fmt.Println("rest client err:", err)
 		changeInstance()
-		search(query, region)
+		search(query)
 	}
 	if resp.StatusCode() != 200 {
 		fmt.Println("  Status Code:", resp.StatusCode())
 		fmt.Println("  Status     :", resp.Status())
 		changeInstance()
-		search(query, region)
+		search(query)
 	} else {
 		var result []SearchResult
 		err = json.Unmarshal(resp.Body(), &result)
@@ -273,8 +274,11 @@ func search(query, region string) {
 					Title:         r.Title,
 					VideoID:       r.VideoID,
 					Author:        r.Author,
+					ViewCount:     r.ViewCount,
 					ViewCountText: r.ViewCountText,
 					LengthSeconds: r.LengthSeconds,
+					Published:     r.Published,
+					PublishedText: r.PublishedText,
 				}
 				videos = append(videos, v)
 			}
