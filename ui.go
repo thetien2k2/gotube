@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -40,6 +42,27 @@ func renderApp() {
 			sortby = ""
 			scanVideos()
 		case rune('e'):
+			app.Stop()
+			fmt.Print("search: ")
+			reader := bufio.NewReader(os.Stdin)
+			query, err := reader.ReadString('\n')
+			if err != nil {
+				panic(err)
+			}
+			query = strings.Replace(query, "\n", "", -1)
+			fmt.Print("region (VN): ")
+			region, err := reader.ReadString('\n')
+			if err != nil {
+				panic(err)
+			}
+			region = strings.Replace(region, "\n", "", -1)
+			region = strings.ToUpper(region)
+			if region == "" {
+				region = "VN"
+			}
+			search(query, region)
+			renderApp()
+		case rune('o'):
 			app.Stop()
 			err = exportM3U(0, playlistFile)
 			if err != nil {
@@ -96,7 +119,7 @@ func renderPlaylist() {
 		AddText(fmt.Sprintf("sort by: %v", sortby), true, tview.AlignLeft, tcell.ColorGray).
 		AddText("gotubeplaylist", true, tview.AlignCenter, tcell.ColorLightCyan).
 		AddText(fmt.Sprintf("%v %v", txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
-		AddText("(q) quit | (w) update | (e) export | (r) continuous | (t) audio only", false, tview.AlignLeft, tcell.ColorGray).
-		AddText("toggle sort: (a) date, (s) view, (d) length, (f) channel", false, tview.AlignLeft, tcell.ColorGray)
+		AddText("(q)quit (w)update (e)search (r)continuous (t)audio only (o)export", false, tview.AlignLeft, tcell.ColorGray).
+		AddText("sort: (a)date (s)view (d)length (f)channel", false, tview.AlignLeft, tcell.ColorGray)
 	app.SetRoot(frame, true).SetFocus(frame)
 }

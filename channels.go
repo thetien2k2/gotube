@@ -242,14 +242,54 @@ func exportM3U(index int, location string) error {
 	return nil
 }
 
+func search(query, region string) {
+	client := resty.New()
+	var resp *resty.Response
+	request := client.R()
+	request.SetQueryParam("q", query)
+	request.SetQueryParam("region", region)
+	resp, err = request.Get("https://" + invidious[instanceIndex] + "/api/v1/search?")
+	if err != nil {
+		fmt.Println("rest client err:", err)
+		changeInstance()
+		search(query, region)
+	}
+	if resp.StatusCode() != 200 {
+		fmt.Println("  Status Code:", resp.StatusCode())
+		fmt.Println("  Status     :", resp.Status())
+		changeInstance()
+		search(query, region)
+	} else {
+		var result []SearchResult
+		err = json.Unmarshal(resp.Body(), &result)
+		if err != nil {
+			fmt.Println("Unmarshal err:", err)
+			os.Exit(1)
+		}
+		videos = []Video{}
+		for _, r := range result {
+			if r.Type == "video" {
+				v := Video{
+					Title:         r.Title,
+					VideoID:       r.VideoID,
+					Author:        r.Author,
+					ViewCountText: r.ViewCountText,
+					LengthSeconds: r.LengthSeconds,
+				}
+				videos = append(videos, v)
+			}
+		}
+	}
+}
+
 func sortVideosByLength() {
 	sort.Slice(videos, func(i, j int) bool {
 		return toggleLength == (videos[i].LengthSeconds < videos[j].LengthSeconds)
 	})
 	if toggleLength {
-		sortby = "longest"
-	} else {
 		sortby = "shortest"
+	} else {
+		sortby = "longest"
 	}
 	renderPlaylist()
 }
