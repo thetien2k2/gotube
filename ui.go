@@ -50,17 +50,19 @@ func renderApp() {
 				panic(err)
 			}
 			query = strings.Replace(query, "\n", "", -1)
-			fmt.Print("region (VN): ")
-			region, err := reader.ReadString('\n')
-			if err != nil {
-				panic(err)
+			if query != "" {
+				fmt.Print("region (VN): ")
+				region, err := reader.ReadString('\n')
+				if err != nil {
+					panic(err)
+				}
+				region = strings.Replace(region, "\n", "", -1)
+				region = strings.ToUpper(region)
+				if region == "" {
+					region = "VN"
+				}
+				search(query, region)
 			}
-			region = strings.Replace(region, "\n", "", -1)
-			region = strings.ToUpper(region)
-			if region == "" {
-				region = "VN"
-			}
-			search(query, region)
 			renderApp()
 		case rune('o'):
 			app.Stop()
