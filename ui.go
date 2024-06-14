@@ -109,7 +109,7 @@ func renderPlaylist() {
 	}
 	frame = tview.NewFrame(list).
 		AddText(fmt.Sprintf("sort by: %v", sortby), true, tview.AlignLeft, tcell.ColorGray).
-		AddText("gotubeplaylist", true, tview.AlignCenter, tcell.ColorLightCyan).
+		AddText("gotube", true, tview.AlignCenter, tcell.ColorLightCyan).
 		AddText(fmt.Sprintf("%v %v", txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
 		AddText("(q)quit (w)update (e)search (r)continuous (t)audio only (o)export", false, tview.AlignLeft, tcell.ColorGray).
 		AddText("sort: (a)date (s)view (d)length (f)channel", false, tview.AlignLeft, tcell.ColorGray)

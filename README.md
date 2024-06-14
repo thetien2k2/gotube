@@ -1,4 +1,4 @@
-# gotubeplaylist
+# gotube
 An app allow user to manage a list of youtube channels, get videos from them and sort videos by some criterias.  
 User can play video in mpv by select video from app, able to play next video in list when last video eof.  
 App depends on youtube-dl/yt-dlp, mpv and Invidious.
@@ -14,19 +14,19 @@ Please add some channels at first.
 App use channel's url or id as idetity.
 
 - to add a channel
-./gotubeplaylist add [channel's url or id]  
-example: ./gotubeplaylist add UCyJnvNM8SX3hiiRdEh6H9vw (get channel's url from https://www.youtube.com/channel/UCyJnvNM8SX3hiiRdEh6H9vw)
+./gotube add [channel's url or id]  
+example: ./gotube add UCyJnvNM8SX3hiiRdEh6H9vw (get channel's url from https://www.youtube.com/channel/UCyJnvNM8SX3hiiRdEh6H9vw)
 
 - to list added channels  
-./gotubeplaylist list   
-./gotubeplaylist ls 
+./gotube list   
+./gotube ls 
 
 - to delete a channel from list  
-./gotubeplaylist delete [channel's url or id]  
-./gotubeplaylist rm [channel's url or id]  
+./gotube delete [channel's url or id]  
+./gotube rm [channel's url or id]  
 
 ### playing videos
-./gotubeplaylist
+./gotube
 
 App functions:  
 - Enter, play video in mpv

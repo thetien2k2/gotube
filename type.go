@@ -11,7 +11,7 @@ const (
 	videosJson   = "videos.json"
 	playlistFile = "playlist.m3u"
 	socket       = "/tmp/mpvsocket"
-	tmpPlaylist  = "/tmp/gotubeplaylist.m3u"
+	tmpPlaylist  = "/tmp/gotube.m3u"
 )
 
 var (

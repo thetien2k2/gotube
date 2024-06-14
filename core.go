@@ -391,14 +391,16 @@ func mpv(v Video) {
 		}()
 		for event := range events {
 			if event.Name == "file-loaded" {
-				name, _ := conn.Get("filename")
-				mpvFileLoaded(name.(string))
+				name, err := conn.Get("filename")
+				if err == nil {
+					mpvFileLoaded(name.(string))
+				}
 			}
 		}
 	}
 
 	<-done
-	fmt.Print("\033]0;gotubeplaylist\007")
+	fmt.Print("\033]0;gotube\007")
 	renderApp()
 }
 
@@ -426,7 +428,7 @@ func prepareDataDir() {
 			os.Exit(1)
 		}
 	}
-	dataDir += "/gotubeplaylist"
+	dataDir += "/gotube"
 	err = os.MkdirAll(dataDir, 0755)
 	if err != nil {
 		fmt.Println(err)

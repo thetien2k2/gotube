@@ -1,4 +1,4 @@
-module emtidi.com/gotubeplaylist
+module github.com/thetien2k2/gotube
 
 go 1.22.2
 
