@@ -7,50 +7,45 @@ import (
 )
 
 const (
-	channelsList = "channels.json"
-	videosJson   = "videos.json"
-	playlistFile = "playlist.m3u"
-	socket       = "/tmp/mpvsocket"
-	tmpPlaylist  = "/tmp/gotube.m3u"
+	channelsList  = "channels.json"
+	videosJson    = "videos.json"
+	instancesList = "instances.json"
+	playlistFile  = "playlist.m3u"
+	socket        = "/tmp/mpvsocket"
+	tmpPlaylist   = "/tmp/gotube.m3u"
 )
 
 var (
-	invidious = []string{
-		"invidious.fdn.fr",
-		"vid.puffyan.us",
-		"iv.ggtyler.dev",
-		"inv.tux.pizza",
-		"yewtu.be",
-		"yt.artemislena.eu",
-		"yt.cdaut.de",
-		"inv.in.projectsegfau.lt",
-		"invidious.perennialte.ch",
-	}
-	dataDir        string
-	channels       []Channel
-	videos         []Video
-	err            error
-	instanceIndex  int
-	instanceChange int
-	instanceRetry  = len(invidious) * 3
-	toggleDate     = true
-	toggleView     = true
-	toggleLength   = true
-	toggleChannel  = true
-	app            *tview.Application
-	list           *tview.List
-	frame          *tview.Frame
-	selected       int
-	continuous     bool
-	audioOnly      bool
-	sortby         string
-	errNoChannel   = fmt.Errorf("please add some channels first")
+	dataDir       string
+	instances     []Instance
+	channels      []Channel
+	videos        []Video
+	err           error
+	toggleDate    = true
+	toggleView    = true
+	toggleLength  = true
+	toggleChannel = true
+	app           *tview.Application
+	list          *tview.List
+	frame         *tview.Frame
+	selected      int
+	continuous    bool
+	audioOnly     bool
+	sortby        string
+	errNoChannel  = fmt.Errorf("please add some channels first")
+	errNoInstance = fmt.Errorf("please add some invidious instance")
 )
 
 type Channel struct {
 	Name string `json:"name"`
 	Url  string `json:"url"`
 	Id   string `json:"id"`
+}
+
+type Instance struct {
+	Url    string  `json:"url"`
+	Online bool    `json:"online"`
+	Ping   float64 `json:"ping"`
 }
 
 type SearchResult struct {

@@ -3,4 +3,5 @@ gotube
 *.sh
 channels.json
 videos.json
+instances.json
 test.http
