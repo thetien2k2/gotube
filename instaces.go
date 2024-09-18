@@ -22,11 +22,11 @@ func updateInstances() {
 		resp, err = restGet(i.Url, "/api/v1/stats", make(map[string]string))
 		if err != nil {
 			i.Online = false
-		} else {
-			i.Online = true
-		}
-		i.Ping = resp.Time().Seconds()
-		nis = append(nis, i)
+      continue
+		} 
+    i.Online = true
+    i.Ping = resp.Time().Seconds()
+    nis = append(nis, i)
 	}
 
 	sort.Slice(nis, func(i, j int) bool {

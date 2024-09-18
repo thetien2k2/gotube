@@ -11,19 +11,25 @@ Data for app located in user's config directory or user's home directory (when c
 Please add some channels at first.
 
 ### channel management:
-App use channel's url or id as idetity.
-
 - to add a channel
-./gotube add [channel's url or id]  
+./gotube addc [channel's url or id]  
 example: ./gotube add UCyJnvNM8SX3hiiRdEh6H9vw (get channel's url from https://www.youtube.com/channel/UCyJnvNM8SX3hiiRdEh6H9vw)
 
 - to list added channels  
-./gotube list   
-./gotube ls 
+./gotube lsc 
 
-- to delete a channel from list  
-./gotube delete [channel's url or id]  
-./gotube rm [channel's url or id]  
+- to remove a channel
+./gotube rmc [channel's url or id]  
+
+### Invidious instance management:
+- to add an instance 
+./gotube addi [instance's url]
+
+- to list and update instances by responce time
+./gotube lsi
+
+- to remove an instance
+./gotube rmi [instance's url]
 
 ### playing videos
 ./gotube
@@ -36,7 +42,8 @@ App functions:
 - f, toggle sort by channel name
 - q, quit app
 - w, update new videos from channels
-- e, export list to file playlist.m3u
+- e, new video list by search
+- o, export list to file playlist.m3u
 - r, toggle continuous playing (off by default)
 - t, audio only  
 
