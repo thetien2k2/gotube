@@ -18,11 +18,10 @@ func getVideos(id string) (vs Videos, err error) {
 	ep := fmt.Sprintf("/api/v1/channels/%v/videos", id)
 	var resp *resty.Response
 	for _, i := range instances {
-		resp, err = restGet(i.Url, ep, make(map[string]string))
+		resp, err = restGet(i, ep, make(map[string]string))
 		if err == nil {
 			break
 		}
-		fmt.Println(err)
 	}
 	if err != nil {
 		return
@@ -55,8 +54,6 @@ func scanVideos() {
 		app.Stop()
 	}
 	videos = []Video{}
-
-	fmt.Println("updating videos...")
 
 	var mu sync.Mutex
 	numJobs := len(channels)
@@ -141,16 +138,12 @@ func search(query string) {
 	rq["q"] = query
 	rq["type"] = "video"
 	ep := "/api/v1/search?"
-  var resp *resty.Response
-  for _,i:=range instances{
-    resp, err= restGet(i.Url,ep, rq)
-    if err == nil {
-      break
-    }
-  }
-	if err != nil {
-		fmt.Println(err)
-		return
+	var resp *resty.Response
+	for _, i := range instances {
+		resp, err = restGet(i, ep, rq)
+		if err == nil {
+			break
+		}
 	}
 	var result []SearchResult
 	err = json.Unmarshal(resp.Body(), &result)

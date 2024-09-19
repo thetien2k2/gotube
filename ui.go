@@ -49,7 +49,7 @@ func renderApp() {
 			if err != nil {
 				panic(err)
 			}
-			query = strings.Replace(query, "\n", "", -1)
+			query = strings.ReplaceAll(query, "\n", "", )
 			if query != "" {
 				search(query)
 			}

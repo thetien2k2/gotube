@@ -9,23 +9,22 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-func addChannel(url string) {
+func addChannel(name string) {
 	err = readChannels()
 	if err != nil && err != errNoChannel {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	ep := "/api/v1/search?q=" + url
-  var resp *resty.Response
+	ep := "/api/v1/search?q=" + name
+	var resp *resty.Response
 	for _, i := range instances {
-		resp, err = restGet(i.Url, ep, make(map[string]string))
+		resp, err = restGet(i, ep, make(map[string]string))
 		if err == nil {
 			break
-		} else {
-			fmt.Println(err)
 		}
 	}
+
 	var result []SearchResult
 	err = json.Unmarshal(resp.Body(), &result)
 	if err != nil {

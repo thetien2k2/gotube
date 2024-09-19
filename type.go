@@ -32,8 +32,8 @@ var (
 	continuous    bool
 	audioOnly     bool
 	sortby        string
-	errNoChannel  = fmt.Errorf("please add some channels first")
-	errNoInstance = fmt.Errorf("please add some invidious instance")
+	errNoChannel  = fmt.Errorf("please add some channels, using addc command")
+	errNoInstance = fmt.Errorf("please add some invidious instances from https://docs.invidious.io/instances/ , using addi command")
 )
 
 type Channel struct {

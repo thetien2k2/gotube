@@ -11,22 +11,17 @@ import (
 )
 
 func updateInstances() {
-	err = readInstances()
-	if err != nil && err != errNoInstance {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 	var nis []Instance
 	for _, i := range instances {
 		var resp *resty.Response
-		resp, err = restGet(i.Url, "/api/v1/stats", make(map[string]string))
+		resp, err = restGet(i, "/api/v1/stats", make(map[string]string))
 		if err != nil {
 			i.Online = false
-      continue
-		} 
-    i.Online = true
-    i.Ping = resp.Time().Seconds()
-    nis = append(nis, i)
+		} else {
+			i.Online = true
+		}
+		i.Ping = resp.Time().Seconds()
+		nis = append(nis, i)
 	}
 
 	sort.Slice(nis, func(i, j int) bool {
@@ -41,15 +36,16 @@ func updateInstances() {
 }
 
 func addInstance(url string) {
-	err = readInstances()
-	if err != nil && err != errNoInstance {
-		fmt.Println(err)
-		os.Exit(1)
+	for _, i := range instances {
+		if i.Url == url {
+			fmt.Println("instance existed")
+			os.Exit(1)
+		}
 	}
 	var resp *resty.Response
-	resp, err = restGet(url, "/api/v1/stats", make(map[string]string))
+	i := Instance{Url: url, Online: true}
+	resp, err = restGet(i, "/api/v1/stats", make(map[string]string))
 	if err != nil {
-		fmt.Println("rest client err:", err)
 		os.Exit(1)
 	}
 	isInviduos := strings.ContainsAny(string(resp.Body()), "invidious")
@@ -57,23 +53,13 @@ func addInstance(url string) {
 		fmt.Println("this is not a Invidious instance")
 		os.Exit(1)
 	}
-	for _, i := range instances {
-		if i.Url == url {
-			fmt.Println("instance existed")
-			os.Exit(1)
-		}
-	}
-	instances = append(instances, Instance{Url: url})
+	i.Ping = resp.Time().Seconds()
+	instances = append(instances, i)
 	saveInstances()
 	fmt.Println("instance added")
 }
 
 func deleteInstance(url string) {
-	err = readInstances()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 	var (
 		ns    []Instance
 		found bool
@@ -113,11 +99,6 @@ func readInstances() error {
 }
 
 func listInstances() {
-	err = readInstances()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 	fmt.Println("Added invidious instances:")
 	fmt.Println("---------------------")
 	for _, i := range instances {
@@ -136,23 +117,35 @@ func saveInstances() {
 	}
 }
 
-func restGet(instance, endpoint string, requests map[string]string) (*resty.Response, error) {
+func restGet(instance Instance, endpoint string, requests map[string]string) (*resty.Response, error) {
+	var err error
+	if !instance.Online {
+		err = fmt.Errorf("instance offline")
+		return nil, err
+	}
 	client := resty.New()
 	rq := client.R()
 	for i, k := range requests {
 		rq.SetQueryParam(i, k)
 	}
 	var resp *resty.Response
-	resp, err = rq.Get(instance + endpoint)
+	resp, err = rq.Get(instance.Url + endpoint)
 	if err != nil {
+		err = fmt.Errorf("%s", err)
+		fmt.Printf("%s %v\n", instance.Url, err)
 		return nil, err
 	}
 	if resp.IsError() {
-		return nil, fmt.Errorf("%s", resp.Status())
+		err = fmt.Errorf("%s", resp.Status())
+		fmt.Printf("%s %v\n", instance.Url, err)
+		return nil, err
 	}
 	header := resp.Header().Values("Content-Type")[0]
 	if header != "application/json" {
-		return nil, fmt.Errorf("invalid header %s", header)
+		err = fmt.Errorf("invalid header %s", header)
+		fmt.Printf("%s %v\n", instance.Url, err)
+		return nil, err
 	}
+
 	return resp, nil
 }

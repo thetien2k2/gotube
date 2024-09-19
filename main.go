@@ -8,24 +8,25 @@ import (
 func main() {
 	prepareDataDir()
 
+	err = readInstances()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	args := os.Args
 
 	switch {
 	case len(args) == 1:
-		err := readInstances()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 		readVideosList()
 		renderApp()
 	case len(args) == 3 && args[1] == "addc":
-		url := args[2]
-		if url == "" {
+		name := args[2]
+		if name == "" {
 			fmt.Println("empty channel url")
 			os.Exit(1)
 		}
-		addChannel(url)
+		addChannel(name)
 	case len(args) == 3 && args[1] == "rmc":
 		url := args[2]
 		if url == "" {
