@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -124,6 +125,7 @@ func restGet(instance Instance, endpoint string, requests map[string]string) (*r
 		return nil, err
 	}
 	client := resty.New()
+	client.SetTimeout(time.Second * 10)
 	rq := client.R()
 	for i, k := range requests {
 		rq.SetQueryParam(i, k)

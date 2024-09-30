@@ -145,6 +145,9 @@ func search(query string) {
 			break
 		}
 	}
+	if err != nil {
+		return
+	}
 	var result []SearchResult
 	err = json.Unmarshal(resp.Body(), &result)
 	if err != nil {

@@ -24,7 +24,10 @@ func addChannel(name string) {
 			break
 		}
 	}
-
+	if err != nil {
+		fmt.Println("unable to add channel, err", err)
+		return
+	}
 	var result []SearchResult
 	err = json.Unmarshal(resp.Body(), &result)
 	if err != nil {
