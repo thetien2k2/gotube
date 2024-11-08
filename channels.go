@@ -5,54 +5,38 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/go-resty/resty/v2"
 )
 
-func addChannel(name string) {
+type Channel struct {
+	Id         string  `json:"id"`
+	Channel    string  `json:"channel"`
+	ChannelUrl string  `json:"channel_url"`
+	Follower   int64   `json:"channel_follower_count"`
+	Videos     []Video `json:"entries"`
+}
+
+func addChannel(url string) {
 	err = readChannels()
 	if err != nil && err != errNoChannel {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
-	ep := "/api/v1/search?q=" + name
-	var resp *resty.Response
-	for _, i := range instances {
-		resp, err = restGet(i, ep, make(map[string]string))
-		if err == nil {
-			break
-		}
-	}
+	nc, err := getChannel(url)
 	if err != nil {
-		fmt.Println("unable to add channel, err", err)
-		return
-	}
-	var result []SearchResult
-	err = json.Unmarshal(resp.Body(), &result)
-	if err != nil {
-		fmt.Println("Unmarshal err:", err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
-	for _, r := range result {
-		if r.Type == "channel" {
-			cn := Channel{
-				Name: r.Author,
-				Url:  r.ChannelHandle,
-				Id:   r.AuthorID,
-			}
-			for _, c := range channels {
-				if c.Id == cn.Id {
-					fmt.Println("channel existed")
-					os.Exit(0)
-				}
-			}
-			channels = append(channels, cn)
-			saveChannels()
-			fmt.Println("channel added")
-			break
+
+	for _, c := range channels {
+		if c.Id == nc.Id {
+			fmt.Println("channel existed")
+			os.Exit(0)
 		}
 	}
+	nc.Videos = []Video{}
+	channels = append(channels, nc)
+	saveChannelsList()
+	fmt.Println("channel added")
 }
 
 func deleteChannel(id string) {
@@ -66,24 +50,24 @@ func deleteChannel(id string) {
 		found bool
 	)
 	for _, c := range channels {
-		if strings.EqualFold(c.Url, id) || strings.EqualFold(c.Id, id) {
+		if strings.EqualFold(c.Id, id) {
 			found = true
 		} else {
 			ns = append(ns, c)
 		}
 	}
 	channels = ns
-	saveChannels()
+	saveChannelsList()
 	if found {
-		fmt.Println("channel with url/id", id, "removed")
+		fmt.Println("channel with id", id, "removed")
 	} else {
-		fmt.Println("channel with url/id", id, "do not existed")
+		fmt.Println("channel with id", id, "do not existed")
 	}
 }
 
 func readChannels() error {
 	if _, err := os.Stat(dataDir + "/" + channelsList); err != nil {
-		saveChannels()
+		saveChannelsList()
 	}
 	file, err := os.ReadFile(dataDir + "/" + channelsList)
 	if err != nil {
@@ -108,11 +92,11 @@ func listChannels() {
 	fmt.Println("Added channels:")
 	fmt.Println("---------------------")
 	for _, c := range channels {
-		fmt.Printf("url: %v | id: %v | name: %v\n", c.Url, c.Id, c.Name)
+		fmt.Printf("id: %v | name: %v \n", c.Id, c.Channel)
 	}
 }
 
-func saveChannels() {
+func saveChannelsList() {
 	jdata, err := json.Marshal(channels)
 	if err != nil {
 		panic(err)

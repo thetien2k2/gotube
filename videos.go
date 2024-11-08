@@ -7,40 +7,32 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/DexterLB/mpvipc"
-	"github.com/go-resty/resty/v2"
 )
 
-func getVideos(id string) (vs Videos, err error) {
-	ep := fmt.Sprintf("/api/v1/channels/%v/videos", id)
-	var resp *resty.Response
-	for _, i := range instances {
-		resp, err = restGet(i, ep, make(map[string]string))
-		if err == nil {
-			break
-		}
-	}
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(resp.Body(), &vs)
-	if err != nil {
-		return
-	}
-	return
+type Video struct {
+	Title     string  `json:"title"`
+	Url       string  `json:"url"`
+	Channel   string  `json:"channel"`
+	Duration  float64 `json:"duration"`
+	Timestamp int64   `json:"timestamp"`
+	ViewCount int     `json:"view_count"`
 }
 
-func worker(jobs <-chan Channel, results chan<- Videos) {
+func worker(jobs <-chan Channel, result chan<- Channel) {
 	for j := range jobs {
-		fmt.Println("updating", j.Name)
-		vs, err := getVideos(j.Id)
-		if err != nil {
-			fmt.Println("update", j.Name, "failed", err)
+		fmt.Println("updatding", j.Channel, j.Id)
+		url := j.ChannelUrl
+		if url == "" {
+			url = "https://www.youtube.com/channel/" + j.Id
 		}
-		results <- vs
+		nc, err := getChannel(url)
+		if err != nil {
+			fmt.Println(err)
+		}
+		result <- nc
 	}
 }
 
@@ -54,30 +46,33 @@ func scanVideos() {
 		app.Stop()
 	}
 	videos = []Video{}
+	var newChannelList []Channel
 
-	var mu sync.Mutex
 	numJobs := len(channels)
 	jobs := make(chan Channel, numJobs)
-	results := make(chan Videos, numJobs)
-	for range 10 {
-		go worker(jobs, results)
+	result := make(chan Channel, numJobs)
+	for range 5 {
+		go worker(jobs, result)
 	}
 	for _, c := range channels {
 		jobs <- c
 	}
 	close(jobs)
 	for range numJobs {
-		vs := <-results
-		for _, v := range vs.Videos {
-			if v.IsUpcoming || v.Premium {
-				continue
+		nc := <-result
+		if len(nc.Videos) > 0 {
+			for i, v := range nc.Videos {
+				v.Channel = nc.Channel
+				nc.Videos[i] = v
 			}
-			mu.Lock()
-			videos = append(videos, v)
-			mu.Unlock()
+			videos = append(videos, nc.Videos...)
+			nc.Videos = []Video{}
+			newChannelList = append(newChannelList, nc)
 		}
 	}
 	saveVideosList()
+  channels = newChannelList
+	saveChannelsList()
 	renderApp()
 }
 
@@ -112,11 +107,8 @@ func exportM3U(index int, location string) error {
 	strs = append(strs, "#EXTM3U")
 	for i := index; i < len(videos); i++ {
 		v := videos[i]
-		d := time.Duration(v.LengthSeconds * 1000000000)
-		since := time.Since(time.Unix(int64(v.Published), 0)).Round(time.Minute)
 		strs = append(strs, fmt.Sprintf("#EXTINF: %v", v.Title))
-		strs = append(strs, fmt.Sprintf("#EXTINF: %v, %v, since %v ago, %v", v.Author, v.ViewCountText, since, d.String()))
-		strs = append(strs, "https://www.youtube.com/watch?v="+v.VideoID)
+		strs = append(strs, v.Url)
 		strs = append(strs, "")
 	}
 	f, err := os.Create(location)
@@ -133,48 +125,48 @@ func exportM3U(index int, location string) error {
 	return nil
 }
 
-func search(query string) {
-	rq := make(map[string]string)
-	rq["q"] = query
-	rq["type"] = "video"
-	ep := "/api/v1/search?"
-	var resp *resty.Response
-	for _, i := range instances {
-		resp, err = restGet(i, ep, rq)
-		if err == nil {
-			break
-		}
-	}
-	if err != nil {
-		return
-	}
-	var result []SearchResult
-	err = json.Unmarshal(resp.Body(), &result)
-	if err != nil {
-		fmt.Println("Unmarshal err:", err)
-		os.Exit(1)
-	}
-	videos = []Video{}
-	for _, r := range result {
-		if r.Type == "video" {
-			v := Video{
-				Title:         r.Title,
-				VideoID:       r.VideoID,
-				Author:        r.Author,
-				ViewCount:     r.ViewCount,
-				ViewCountText: r.ViewCountText,
-				LengthSeconds: r.LengthSeconds,
-				Published:     r.Published,
-				PublishedText: r.PublishedText,
-			}
-			videos = append(videos, v)
-		}
-	}
-}
+// func search(query string) {
+// 	rq := make(map[string]string)
+// 	rq["q"] = query
+// 	rq["type"] = "video"
+// 	ep := "/api/v1/search?"
+// 	var resp *resty.Response
+// 	for _, i := range instances {
+// 		resp, err = restGet(i, ep, rq)
+// 		if err == nil {
+// 			break
+// 		}
+// 	}
+// 	if err != nil {
+// 		return
+// 	}
+// 	var result []SearchResult
+// 	err = json.Unmarshal(resp.Body(), &result)
+// 	if err != nil {
+// 		fmt.Println("Unmarshal err:", err)
+// 		os.Exit(1)
+// 	}
+// 	videos = []Video{}
+// 	for _, r := range result {
+// 		if r.Type == "video" {
+// 			v := Video{
+// 				Title:         r.Title,
+// 				VideoID:       r.VideoID,
+// 				Author:        r.Author,
+// 				ViewCount:     r.ViewCount,
+// 				ViewCountText: r.ViewCountText,
+// 				LengthSeconds: r.LengthSeconds,
+// 				Published:     r.Published,
+// 				PublishedText: r.PublishedText,
+// 			}
+// 			videos = append(videos, v)
+// 		}
+// 	}
+// }
 
 func sortVideosByLength() {
 	sort.Slice(videos, func(i, j int) bool {
-		return toggleLength == (videos[i].LengthSeconds < videos[j].LengthSeconds)
+		return toggleLength == (videos[i].Duration < videos[j].Duration)
 	})
 	if toggleLength {
 		sortby = "shortest"
@@ -198,7 +190,7 @@ func sortVideosByMostView() {
 
 func sortVideosByDate() {
 	sort.Slice(videos, func(i, j int) bool {
-		return toggleDate == (videos[i].Published > videos[j].Published)
+		return toggleDate == (videos[i].Timestamp > videos[j].Timestamp)
 	})
 	if toggleDate {
 		sortby = "newest"
@@ -210,10 +202,10 @@ func sortVideosByDate() {
 
 func sortVideosByChannel() {
 	sort.Slice(videos, func(i, j int) bool {
-		if videos[i].Author == videos[j].Author {
-			return videos[i].Published > videos[j].Published
+		if videos[i].Channel == videos[j].Channel {
+			return videos[i].Timestamp > videos[j].Timestamp
 		} else {
-			return toggleChannel == (videos[i].Author < videos[j].Author)
+			return toggleChannel == (videos[i].Channel < videos[j].Channel)
 		}
 	})
 	if toggleChannel {
@@ -242,7 +234,7 @@ func mpv(v Video) {
 		if continuous {
 			args = append(args, fmt.Sprintf("--playlist=%s", tmpPlaylist))
 		} else {
-			args = append(args, fmt.Sprintf("https://www.youtube.com/watch?v=%v", v.VideoID))
+			args = append(args, v.Url)
 		}
 		if audioOnly {
 			args = append(args, "--vid=no")
@@ -288,10 +280,9 @@ func mpv(v Video) {
 	renderApp()
 }
 
-func mpvFileLoaded(id string) {
-	id = strings.Replace(id, "watch?v=", "", -1)
+func mpvFileLoaded(url string) {
 	for i, v := range videos {
-		if v.VideoID == id {
+		if strings.Contains(v.Url, url) {
 			fmt.Printf("\033]0;%s\007", v.Title)
 			selected = i
 			break

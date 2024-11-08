@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 func renderApp() {
@@ -42,19 +42,6 @@ func renderApp() {
 			sortby = ""
 			scanVideos()
 		case rune('e'):
-			app.Stop()
-			fmt.Print("search: ")
-			reader := bufio.NewReader(os.Stdin)
-			query, err := reader.ReadString('\n')
-			if err != nil {
-				panic(err)
-			}
-			query = strings.ReplaceAll(query, "\n", "", )
-			if query != "" {
-				search(query)
-			}
-			renderApp()
-		case rune('o'):
 			app.Stop()
 			err = exportM3U(0, playlistFile)
 			if err != nil {
@@ -90,9 +77,10 @@ func renderPlaylist() {
 		sortby = "natural"
 	}
 	for i, v := range videos {
-		d := time.Duration(v.LengthSeconds * 1000000000)
+		d := time.Duration(int(v.Duration) * 1000000000)
+		viewcount := message.NewPrinter(language.English).Sprintf("%d", v.ViewCount)
 		list.AddItem(fmt.Sprintf("%v| %s", i, v.Title),
-			fmt.Sprintf("       %v, %v, %s, %s", v.Author, v.ViewCountText, v.PublishedText, d.String()), rune(0), func() {
+			fmt.Sprintf("       %v %v views | %s | %s", v.Channel, viewcount, d.String(), time.Unix(v.Timestamp, 0).Format(time.DateTime)), rune(0), func() {
 				selected = list.GetCurrentItem()
 				mpv(v)
 			})
@@ -111,7 +99,7 @@ func renderPlaylist() {
 		AddText(fmt.Sprintf("sort by: %v", sortby), true, tview.AlignLeft, tcell.ColorGray).
 		AddText("gotube", true, tview.AlignCenter, tcell.ColorLightCyan).
 		AddText(fmt.Sprintf("%v %v", txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
-		AddText("(q)quit (w)update (e)search (r)continuous (t)audio only (o)export", false, tview.AlignLeft, tcell.ColorGray).
+		AddText("(q)quit (w)update (e)export (r)continuous (t)audio only", false, tview.AlignLeft, tcell.ColorGray).
 		AddText("sort: (a)date (s)view (d)length (f)channel", false, tview.AlignLeft, tcell.ColorGray)
 	app.SetRoot(frame, true).SetFocus(frame)
 }
