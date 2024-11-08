@@ -22,7 +22,7 @@ const (
 var (
 	dataDir       string
 	channels      []Channel
-	videos        []Video
+	videos        []Entry
 	err           error
 	toggleDate    bool
 	toggleView    bool
@@ -112,7 +112,7 @@ func getChannel(url string) (c Channel, err error) {
 		return
 	}
 	if c.Channel == "" {
-		err = fmt.Errorf("%v bad channel", c.Id)
+		err = fmt.Errorf("%v bad channel", c.ChannelId)
 		c = Channel{}
 		return
 	}

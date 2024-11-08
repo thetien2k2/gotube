@@ -80,7 +80,7 @@ func renderPlaylist() {
 		d := time.Duration(int(v.Duration) * 1000000000)
 		viewcount := message.NewPrinter(language.English).Sprintf("%d", v.ViewCount)
 		list.AddItem(fmt.Sprintf("%v| %s", i, v.Title),
-			fmt.Sprintf("       %v %v views | %s | %s", v.Channel, viewcount, d.String(), time.Unix(v.Timestamp, 0).Format(time.DateTime)), rune(0), func() {
+			fmt.Sprintf("       %v | %v views | %s | %s", v.Channel, viewcount, d.String(), time.Unix(v.Timestamp, 0).Format(time.DateTime)), rune(0), func() {
 				selected = list.GetCurrentItem()
 				mpv(v)
 			})

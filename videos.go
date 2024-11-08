@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -12,21 +13,23 @@ import (
 	"github.com/DexterLB/mpvipc"
 )
 
-type Video struct {
+type Entry struct {
+	Type      string  `json:"_type"`
 	Title     string  `json:"title"`
 	Url       string  `json:"url"`
 	Channel   string  `json:"channel"`
 	Duration  float64 `json:"duration"`
 	Timestamp int64   `json:"timestamp"`
 	ViewCount int     `json:"view_count"`
+	Entries   []Entry `json:"entries"`
 }
 
 func worker(jobs <-chan Channel, result chan<- Channel) {
 	for j := range jobs {
-		fmt.Println("updatding", j.Channel, j.Id)
+		fmt.Println(j.Channel)
 		url := j.ChannelUrl
 		if url == "" {
-			url = "https://www.youtube.com/channel/" + j.Id
+			url = "https://www.youtube.com/channel/" + j.ChannelId
 		}
 		nc, err := getChannel(url)
 		if err != nil {
@@ -45,13 +48,12 @@ func scanVideos() {
 	if app != nil {
 		app.Stop()
 	}
-	videos = []Video{}
+	videos = []Entry{}
 	var newChannelList []Channel
-
 	numJobs := len(channels)
 	jobs := make(chan Channel, numJobs)
 	result := make(chan Channel, numJobs)
-	for range 5 {
+	for range runtime.NumCPU() {
 		go worker(jobs, result)
 	}
 	for _, c := range channels {
@@ -60,20 +62,26 @@ func scanVideos() {
 	close(jobs)
 	for range numJobs {
 		nc := <-result
-		if len(nc.Videos) > 0 {
-			for i, v := range nc.Videos {
-				v.Channel = nc.Channel
-				nc.Videos[i] = v
-			}
-			videos = append(videos, nc.Videos...)
-			nc.Videos = []Video{}
-			newChannelList = append(newChannelList, nc)
-		}
+		addEntries(nc.Entries, nc.Channel)
+		nc.Entries = []Entry{}
+		newChannelList = append(newChannelList, nc)
 	}
 	saveVideosList()
-  channels = newChannelList
+	channels = newChannelList
 	saveChannelsList()
 	renderApp()
+}
+
+func addEntries(es []Entry, channel string) {
+	for _, e := range es {
+		if e.Type == "playlist" {
+			addEntries(e.Entries, channel)
+		}
+		if e.Type == "url" && e.Duration > 0 {
+			e.Channel = channel
+			videos = append(videos, e)
+		}
+	}
 }
 
 func saveVideosList() {
@@ -216,7 +224,7 @@ func sortVideosByChannel() {
 	renderPlaylist()
 }
 
-func mpv(v Video) {
+func mpv(v Entry) {
 	app.Stop()
 	done := make(chan string)
 	if continuous {

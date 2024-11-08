@@ -8,11 +8,11 @@ import (
 )
 
 type Channel struct {
-	Id         string  `json:"id"`
 	Channel    string  `json:"channel"`
+	ChannelId  string  `json:"channel_id"`
 	ChannelUrl string  `json:"channel_url"`
 	Follower   int64   `json:"channel_follower_count"`
-	Videos     []Video `json:"entries"`
+	Entries    []Entry `json:"entries"`
 }
 
 func addChannel(url string) {
@@ -28,12 +28,12 @@ func addChannel(url string) {
 	}
 
 	for _, c := range channels {
-		if c.Id == nc.Id {
+		if c.ChannelId == nc.ChannelId {
 			fmt.Println("channel existed")
 			os.Exit(0)
 		}
 	}
-	nc.Videos = []Video{}
+	nc.Entries = []Entry{}
 	channels = append(channels, nc)
 	saveChannelsList()
 	fmt.Println("channel added")
@@ -50,7 +50,7 @@ func deleteChannel(id string) {
 		found bool
 	)
 	for _, c := range channels {
-		if strings.EqualFold(c.Id, id) {
+		if strings.EqualFold(c.ChannelId, id) {
 			found = true
 		} else {
 			ns = append(ns, c)
@@ -92,7 +92,7 @@ func listChannels() {
 	fmt.Println("Added channels:")
 	fmt.Println("---------------------")
 	for _, c := range channels {
-		fmt.Printf("id: %v | name: %v \n", c.Id, c.Channel)
+		fmt.Printf("id: %v | name: %v \n", c.ChannelId, c.Channel)
 	}
 }
 
