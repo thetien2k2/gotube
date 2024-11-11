@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"sort"
 	"strings"
 )
 
@@ -15,16 +17,24 @@ type Channel struct {
 	Entries    []Entry `json:"entries"`
 }
 
-func addChannel(url string) {
+func addChannel() {
 	err = readChannels()
-	if err != nil && err != errNoChannel {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	nc, err := getChannel(url)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+	fmt.Println("please enter channel url: ")
+	var url string
+	_, err = fmt.Scan(&url)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(3)
+	}
+	url = strings.ReplaceAll(url, "\n", "")
+	nc, err := getChannel(url)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
 	}
 
 	for _, c := range channels {
@@ -39,37 +49,28 @@ func addChannel(url string) {
 	fmt.Println("channel added")
 }
 
-func deleteChannel(id string) {
-	err = readChannels()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+func deleteChannel(name string) {
+	fmt.Printf("remove channel %s ?[y/n]: ", name)
+	var answer string
+	_, err = fmt.Scan(&answer)
+	if answer != "y" {
+		return
 	}
-	var (
-		ns    []Channel
-		found bool
-	)
+	ns := []Channel{}
 	for _, c := range channels {
-		if strings.EqualFold(c.ChannelId, id) {
-			found = true
-		} else {
+		if c.Channel != name {
 			ns = append(ns, c)
 		}
 	}
 	channels = ns
 	saveChannelsList()
-	if found {
-		fmt.Println("channel with id", id, "removed")
-	} else {
-		fmt.Println("channel with id", id, "do not existed")
-	}
 }
 
 func readChannels() error {
-	if _, err := os.Stat(dataDir + "/" + channelsList); err != nil {
+	if _, err := os.Stat(dataDir + "/" + channelsJson); err != nil {
 		saveChannelsList()
 	}
-	file, err := os.ReadFile(dataDir + "/" + channelsList)
+	file, err := os.ReadFile(dataDir + "/" + channelsJson)
 	if err != nil {
 		return err
 	}
@@ -77,9 +78,9 @@ func readChannels() error {
 	if err != nil {
 		return err
 	}
-	if len(channels) == 0 {
-		return errNoChannel
-	}
+	sort.Slice(channels, func(i, j int) bool {
+		return strings.Compare(channels[i].Channel, channels[j].Channel) < 0
+	})
 	return nil
 }
 
@@ -101,8 +102,44 @@ func saveChannelsList() {
 	if err != nil {
 		panic(err)
 	}
-	err = os.WriteFile(dataDir+"/"+channelsList, jdata, 0755)
+	err = os.WriteFile(dataDir+"/"+channelsJson, jdata, 0755)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func getChannel(url string) (c Channel, err error) {
+	if !strings.HasPrefix(url, "https://www.youtube.com") {
+		err = fmt.Errorf("invalid url")
+		return
+	}
+	var (
+		cmd  *exec.Cmd
+		args []string
+	)
+	args = append(args, "--flat-playlist")
+	args = append(args, "--no-warnings")
+	args = append(args, "--extractor-args")
+	args = append(args, "youtubetab:approximate_date")
+	args = append(args, "-J")
+	args = append(args, "-s")
+	args = append(args, url)
+	cmd = exec.Command(ytdlp, args...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(out))
+		return c, err
+	}
+	err = json.Unmarshal(out, &c)
+	if err != nil {
+		err = fmt.Errorf("Unmarshal err: %v", err)
+		c = Channel{}
+		return
+	}
+	if c.Channel == "" {
+		err = fmt.Errorf("%v bad channel", c.ChannelId)
+		c = Channel{}
+		return
+	}
+	return
 }

@@ -18,48 +18,21 @@ func renderApp() {
 	app = tview.NewApplication()
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
-		case rune('a'):
-			selected = 0
-			sortVideosByDate()
-			toggleDate = !toggleDate
-		case rune('s'):
-			selected = 0
-			sortVideosByMostView()
-			toggleView = !toggleView
-		case rune('d'):
-			selected = 0
-			sortVideosByLength()
-			toggleLength = !toggleLength
-		case rune('f'):
-			selected = 0
-			sortVideosByChannel()
-			toggleChannel = !toggleChannel
 		case rune('q'):
 			app.Stop()
 			os.Exit(0)
 		case rune('w'):
-			selected = 0
-			sortby = ""
-			scanVideos()
-		case rune('e'):
-			app.Stop()
-			err = exportM3U(0, playlistFile)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			} else {
-				fmt.Println("export completed!")
-				time.Sleep(time.Second)
-				renderApp()
+			if app != nil {
+				app.Stop()
 			}
-		case rune('r'):
-			continuous = !continuous
-			selected = list.GetCurrentItem()
+			scanVideos()
+			resetSort()
+			renderApp()
+		case rune('1'):
+			resetSort()
 			renderPlaylist()
-		case rune('t'):
-			audioOnly = !audioOnly
-			selected = list.GetCurrentItem()
-			renderPlaylist()
+		case rune('2'):
+			renderChannels()
 		}
 		return event
 	})
@@ -76,7 +49,7 @@ func renderPlaylist() {
 	if sortby == "" {
 		sortby = "natural"
 	}
-	for i, v := range videos {
+	for i, v := range playlist {
 		d := time.Duration(int(v.Duration) * 1000000000)
 		viewcount := message.NewPrinter(language.English).Sprintf("%d", v.ViewCount)
 		list.AddItem(fmt.Sprintf("%v| %s", i, v.Title),
@@ -97,9 +70,80 @@ func renderPlaylist() {
 	}
 	frame = tview.NewFrame(list).
 		AddText(fmt.Sprintf("sort by: %v", sortby), true, tview.AlignLeft, tcell.ColorGray).
-		AddText("gotube", true, tview.AlignCenter, tcell.ColorLightCyan).
+		AddText("gotube - playlist", true, tview.AlignCenter, tcell.ColorLightCyan).
 		AddText(fmt.Sprintf("%v %v", txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
-		AddText("(q)quit (w)update (e)export (r)continuous (t)audio only", false, tview.AlignLeft, tcell.ColorGray).
+		AddText("(q)quit (w)update | (z)continuous (x)audio only | (r)reset (c)clear", false, tview.AlignLeft, tcell.ColorGray).
 		AddText("sort: (a)date (s)view (d)length (f)channel", false, tview.AlignLeft, tcell.ColorGray)
+	frame.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Rune() {
+		case rune('a'):
+			selected = 0
+			sortPlaylistByDate()
+			toggleDate = !toggleDate
+		case rune('s'):
+			selected = 0
+			sortPlaylistByView()
+			toggleView = !toggleView
+		case rune('d'):
+			selected = 0
+			sortPlaylistByLength()
+			toggleLength = !toggleLength
+		case rune('r'):
+			playlist = videosDb
+			renderPlaylist()
+		case rune('c'):
+			playlist = []Entry{}
+			renderPlaylist()
+		case rune('f'):
+			selected = 0
+			sortPlaylistByChannel()
+			toggleChannel = !toggleChannel
+		case rune('z'):
+			continuous = !continuous
+			selected = list.GetCurrentItem()
+			renderPlaylist()
+		case rune('x'):
+			audioOnly = !audioOnly
+			selected = list.GetCurrentItem()
+			renderPlaylist()
+		}
+		return event
+	})
+	app.SetRoot(frame, true).SetFocus(frame)
+}
+
+func renderChannels() {
+	list = tview.NewList()
+	list.ShowSecondaryText(false)
+	for _, c := range channels {
+		list.AddItem(fmt.Sprintf("%s", c.Channel), "", rune(0), func() {
+			playlist = append(playlist, videosByChannel(c)...)
+			resetSort()
+		})
+	}
+	frame = tview.NewFrame(list).
+		AddText("gotube - channels", true, tview.AlignCenter, tcell.ColorLightCyan).
+		AddText("(q)quit (w)update (d)delete channel (a)add channel", false, tview.AlignLeft, tcell.ColorGray)
+	frame.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Rune() {
+		case rune('d'):
+			if app != nil {
+				app.Stop()
+			}
+			name, _ := list.GetItemText(list.GetCurrentItem())
+			deleteChannel(name)
+			renderApp()
+			renderChannels()
+		case rune('a'):
+			if app != nil {
+				app.Stop()
+			}
+			addChannel()
+			time.Sleep(time.Second)
+			renderApp()
+			renderChannels()
+		}
+		return event
+	})
 	app.SetRoot(frame, true).SetFocus(frame)
 }

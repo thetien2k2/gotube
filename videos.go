@@ -45,10 +45,7 @@ func scanVideos() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	if app != nil {
-		app.Stop()
-	}
-	videos = []Entry{}
+	videosDb = []Entry{}
 	var newChannelList []Channel
 	numJobs := len(channels)
 	jobs := make(chan Channel, numJobs)
@@ -66,10 +63,9 @@ func scanVideos() {
 		nc.Entries = []Entry{}
 		newChannelList = append(newChannelList, nc)
 	}
-	saveVideosList()
+	saveVideosDb()
 	channels = newChannelList
 	saveChannelsList()
-	renderApp()
 }
 
 func addEntries(es []Entry, channel string) {
@@ -79,13 +75,13 @@ func addEntries(es []Entry, channel string) {
 		}
 		if e.Type == "url" && e.Duration > 0 {
 			e.Channel = channel
-			videos = append(videos, e)
+			videosDb = append(videosDb, e)
 		}
 	}
 }
 
-func saveVideosList() {
-	jdata, err := json.Marshal(videos)
+func saveVideosDb() {
+	jdata, err := json.Marshal(videosDb)
 	if err != nil {
 		panic(err)
 	}
@@ -95,7 +91,7 @@ func saveVideosList() {
 	}
 }
 
-func readVideosList() {
+func readVideosDb() {
 	if _, err := os.Stat(dataDir + "/" + videosJson); err != nil {
 		scanVideos()
 		return
@@ -104,7 +100,7 @@ func readVideosList() {
 	if err != nil {
 		panic(err)
 	}
-	err = json.Unmarshal(file, &videos)
+	err = json.Unmarshal(file, &videosDb)
 	if err != nil {
 		panic(err)
 	}
@@ -113,8 +109,8 @@ func readVideosList() {
 func exportM3U(index int, location string) error {
 	var strs []string
 	strs = append(strs, "#EXTM3U")
-	for i := index; i < len(videos); i++ {
-		v := videos[i]
+	for i := index; i < len(videosDb); i++ {
+		v := videosDb[i]
 		strs = append(strs, fmt.Sprintf("#EXTINF: %v", v.Title))
 		strs = append(strs, v.Url)
 		strs = append(strs, "")
@@ -133,48 +129,9 @@ func exportM3U(index int, location string) error {
 	return nil
 }
 
-// func search(query string) {
-// 	rq := make(map[string]string)
-// 	rq["q"] = query
-// 	rq["type"] = "video"
-// 	ep := "/api/v1/search?"
-// 	var resp *resty.Response
-// 	for _, i := range instances {
-// 		resp, err = restGet(i, ep, rq)
-// 		if err == nil {
-// 			break
-// 		}
-// 	}
-// 	if err != nil {
-// 		return
-// 	}
-// 	var result []SearchResult
-// 	err = json.Unmarshal(resp.Body(), &result)
-// 	if err != nil {
-// 		fmt.Println("Unmarshal err:", err)
-// 		os.Exit(1)
-// 	}
-// 	videos = []Video{}
-// 	for _, r := range result {
-// 		if r.Type == "video" {
-// 			v := Video{
-// 				Title:         r.Title,
-// 				VideoID:       r.VideoID,
-// 				Author:        r.Author,
-// 				ViewCount:     r.ViewCount,
-// 				ViewCountText: r.ViewCountText,
-// 				LengthSeconds: r.LengthSeconds,
-// 				Published:     r.Published,
-// 				PublishedText: r.PublishedText,
-// 			}
-// 			videos = append(videos, v)
-// 		}
-// 	}
-// }
-
-func sortVideosByLength() {
-	sort.Slice(videos, func(i, j int) bool {
-		return toggleLength == (videos[i].Duration < videos[j].Duration)
+func sortPlaylistByLength() {
+	sort.Slice(playlist, func(i, j int) bool {
+		return toggleLength == (playlist[i].Duration < playlist[j].Duration)
 	})
 	if toggleLength {
 		sortby = "shortest"
@@ -184,9 +141,9 @@ func sortVideosByLength() {
 	renderPlaylist()
 }
 
-func sortVideosByMostView() {
-	sort.Slice(videos, func(i, j int) bool {
-		return toggleView == (videos[i].ViewCount > videos[j].ViewCount)
+func sortPlaylistByView() {
+	sort.Slice(playlist, func(i, j int) bool {
+		return toggleView == (playlist[i].ViewCount > playlist[j].ViewCount)
 	})
 	if toggleView {
 		sortby = "most view"
@@ -196,9 +153,9 @@ func sortVideosByMostView() {
 	renderPlaylist()
 }
 
-func sortVideosByDate() {
-	sort.Slice(videos, func(i, j int) bool {
-		return toggleDate == (videos[i].Timestamp > videos[j].Timestamp)
+func sortPlaylistByDate() {
+	sort.Slice(playlist, func(i, j int) bool {
+		return toggleDate == (playlist[i].Timestamp > playlist[j].Timestamp)
 	})
 	if toggleDate {
 		sortby = "newest"
@@ -208,12 +165,12 @@ func sortVideosByDate() {
 	renderPlaylist()
 }
 
-func sortVideosByChannel() {
-	sort.Slice(videos, func(i, j int) bool {
-		if videos[i].Channel == videos[j].Channel {
-			return videos[i].Timestamp > videos[j].Timestamp
+func sortPlaylistByChannel() {
+	sort.Slice(playlist, func(i, j int) bool {
+		if playlist[i].Channel == playlist[j].Channel {
+			return playlist[i].Timestamp > playlist[j].Timestamp
 		} else {
-			return toggleChannel == (videos[i].Channel < videos[j].Channel)
+			return toggleChannel == (playlist[i].Channel < playlist[j].Channel)
 		}
 	})
 	if toggleChannel {
@@ -222,6 +179,15 @@ func sortVideosByChannel() {
 		sortby = "channel Z-A"
 	}
 	renderPlaylist()
+}
+
+func resetSort() {
+  selected = 0
+	sortby = ""
+	toggleChannel = false
+	toggleDate = false
+	toggleView = false
+	toggleLength = false
 }
 
 func mpv(v Entry) {
@@ -289,11 +255,20 @@ func mpv(v Entry) {
 }
 
 func mpvFileLoaded(url string) {
-	for i, v := range videos {
+	for i, v := range videosDb {
 		if strings.Contains(v.Url, url) {
 			fmt.Printf("\033]0;%s\007", v.Title)
 			selected = i
 			break
 		}
 	}
+}
+
+func videosByChannel(c Channel) (es []Entry) {
+	for i := range videosDb {
+		if videosDb[i].Channel == c.Channel {
+			es = append(es, videosDb[i])
+		}
+	}
+  return
 }
