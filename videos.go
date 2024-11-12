@@ -50,7 +50,11 @@ func scanVideos() {
 	numJobs := len(channels)
 	jobs := make(chan Channel, numJobs)
 	result := make(chan Channel, numJobs)
-	for range runtime.NumCPU() {
+	numRoutine := runtime.NumCPU()
+	if numRoutine <= 4 {
+		numRoutine = 8
+	}
+	for range numRoutine {
 		go worker(jobs, result)
 	}
 	for _, c := range channels {
@@ -182,7 +186,7 @@ func sortPlaylistByChannel() {
 }
 
 func resetSort() {
-  selected = 0
+	selected = 0
 	sortby = ""
 	toggleChannel = false
 	toggleDate = false
@@ -270,5 +274,5 @@ func videosByChannel(c Channel) (es []Entry) {
 			es = append(es, videosDb[i])
 		}
 	}
-  return
+	return
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -29,7 +31,6 @@ func renderApp() {
 			resetSort()
 			renderApp()
 		case rune('1'):
-			resetSort()
 			renderPlaylist()
 		case rune('2'):
 			renderChannels()
@@ -47,7 +48,7 @@ func renderApp() {
 func renderPlaylist() {
 	list = tview.NewList()
 	if sortby == "" {
-		sortby = "natural"
+		sortby = "no sort"
 	}
 	for i, v := range playlist {
 		d := time.Duration(int(v.Duration) * 1000000000)
@@ -63,15 +64,14 @@ func renderPlaylist() {
 	}
 	var txtcontinuos, txtao string
 	if continuous {
-		txtcontinuos = "[continuous playing]"
+		txtcontinuos = "continuous"
 	}
 	if audioOnly {
-		txtao = "[audio only]"
+		txtao = "audio"
 	}
 	frame = tview.NewFrame(list).
-		AddText(fmt.Sprintf("sort by: %v", sortby), true, tview.AlignLeft, tcell.ColorGray).
-		AddText("gotube - playlist", true, tview.AlignCenter, tcell.ColorLightCyan).
-		AddText(fmt.Sprintf("%v %v", txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
+		AddText("gotube playlist", true, tview.AlignLeft, tcell.ColorLightCyan).
+		AddText(fmt.Sprintf("%v %v %v", sortby, txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
 		AddText("(q)quit (w)update | (z)continuous (x)audio only | (r)reset (c)clear", false, tview.AlignLeft, tcell.ColorGray).
 		AddText("sort: (a)date (s)view (d)length (f)channel", false, tview.AlignLeft, tcell.ColorGray)
 	frame.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -113,6 +113,9 @@ func renderPlaylist() {
 }
 
 func renderChannels() {
+	sort.Slice(channels, func(i, j int) bool {
+		return strings.Compare(channels[i].Channel, channels[j].Channel) < 0
+	})
 	list = tview.NewList()
 	list.ShowSecondaryText(false)
 	for _, c := range channels {
@@ -122,7 +125,7 @@ func renderChannels() {
 		})
 	}
 	frame = tview.NewFrame(list).
-		AddText("gotube - channels", true, tview.AlignCenter, tcell.ColorLightCyan).
+		AddText("gotube channels", true, tview.AlignLeft, tcell.ColorLightCyan).
 		AddText("(q)quit (w)update (d)delete channel (a)add channel", false, tview.AlignLeft, tcell.ColorGray)
 	frame.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
