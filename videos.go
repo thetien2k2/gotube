@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"runtime"
@@ -11,6 +12,19 @@ import (
 	"time"
 
 	"github.com/DexterLB/mpvipc"
+)
+
+var (
+	channels      []Channel
+	videosDb      []Entry
+	playlist      []Entry
+	toggleDate    bool
+	toggleView    bool
+	toggleLength  bool
+	toggleChannel bool
+	continuous    bool
+	audioOnly     bool
+	sortby        string
 )
 
 type Entry struct {
@@ -40,7 +54,10 @@ func worker(jobs <-chan Channel, result chan<- Channel) {
 }
 
 func scanVideos() {
-	err = readChannels()
+	if app != nil {
+		app.Stop()
+	}
+	err := readChannels()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -70,6 +87,7 @@ func scanVideos() {
 	saveVideosDb()
 	channels = newChannelList
 	saveChannelsList()
+	initApp()
 }
 
 func addEntries(es []Entry, channel string) {
@@ -110,14 +128,12 @@ func readVideosDb() {
 	}
 }
 
-func exportM3U(index int, location string) error {
+func exportM3U(es []Entry, location string) error {
 	var strs []string
 	strs = append(strs, "#EXTM3U")
-	for i := index; i < len(videosDb); i++ {
-		v := videosDb[i]
+	for _, v := range es {
 		strs = append(strs, fmt.Sprintf("#EXTINF: %v", v.Title))
 		strs = append(strs, v.Url)
-		strs = append(strs, "")
 	}
 	f, err := os.Create(location)
 	if err != nil {
@@ -186,7 +202,6 @@ func sortPlaylistByChannel() {
 }
 
 func resetSort() {
-	selected = 0
 	sortby = ""
 	toggleChannel = false
 	toggleDate = false
@@ -194,25 +209,26 @@ func resetSort() {
 	toggleLength = false
 }
 
-func mpv(v Entry) {
+func mpv(es []Entry) {
 	app.Stop()
 	done := make(chan string)
-	if continuous {
-		err := exportM3U(selected, tmpPlaylist)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+	if len(es) < 1 {
+		log.Fatalln("len es<1")
 	}
 	go func() {
 		var (
 			cmd  *exec.Cmd
 			args []string
 		)
-		if continuous {
+		if len(es) > 1 {
+			err := exportM3U(es, tmpPlaylist)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 			args = append(args, fmt.Sprintf("--playlist=%s", tmpPlaylist))
 		} else {
-			args = append(args, v.Url)
+			args = append(args, es[0].Url)
 		}
 		if audioOnly {
 			args = append(args, "--vid=no")
@@ -222,7 +238,7 @@ func mpv(v Entry) {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
-		err = cmd.Start()
+		err := cmd.Start()
 		if err != nil {
 			panic(err)
 		}
@@ -255,11 +271,11 @@ func mpv(v Entry) {
 
 	<-done
 	fmt.Print("\033]0;gotube\007")
-	renderApp()
+	initApp()
 }
 
 func mpvFileLoaded(url string) {
-	for i, v := range videosDb {
+	for i, v := range playlist {
 		if strings.Contains(v.Url, url) {
 			fmt.Printf("\033]0;%s\007", v.Title)
 			selected = i

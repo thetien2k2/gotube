@@ -13,10 +13,13 @@ import (
 	"golang.org/x/text/message"
 )
 
-func renderApp() {
-	if app != nil {
-		app.Stop()
-	}
+var (
+	app         *tview.Application
+	frame       *tview.Frame
+	currentView string
+)
+
+func initApp() {
 	app = tview.NewApplication()
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
@@ -24,29 +27,32 @@ func renderApp() {
 			app.Stop()
 			os.Exit(0)
 		case rune('w'):
-			if app != nil {
-				app.Stop()
-			}
 			scanVideos()
 			resetSort()
-			renderApp()
 		case rune('1'):
+			currentView = "playlist"
 			renderPlaylist()
 		case rune('2'):
+			currentView = "channels"
 			renderChannels()
 		}
 		return event
 	})
-	renderPlaylist()
-	app.SetRoot(frame, true).SetFocus(frame)
-	err = app.Run()
+	if currentView == "channels" {
+		renderChannels()
+	} else {
+		renderPlaylist()
+	}
+	err := app.Run()
 	if err != nil {
 		panic(err)
 	}
 }
 
+var selected int
+
 func renderPlaylist() {
-	list = tview.NewList()
+	list := tview.NewList()
 	if sortby == "" {
 		sortby = "no sort"
 	}
@@ -55,23 +61,31 @@ func renderPlaylist() {
 		viewcount := message.NewPrinter(language.English).Sprintf("%d", v.ViewCount)
 		list.AddItem(fmt.Sprintf("%v| %s", i, v.Title),
 			fmt.Sprintf("       %v | %v views | %s | %s", v.Channel, viewcount, d.String(), time.Unix(v.Timestamp, 0).Format(time.DateTime)), rune(0), func() {
-				selected = list.GetCurrentItem()
-				mpv(v)
+				selected = i
+        var es []Entry
+        if continuous {
+          for i:=selected;i<len(playlist);i++{
+            es = append(es, playlist[i])
+          }
+        }else {
+          es = append(es, playlist[selected])
+        }
+				mpv(es)
+				fmt.Println(selected, list.GetItemCount())
+				os.Exit(0)
 			})
 	}
-	if selected > 0 {
-		list.SetCurrentItem(selected)
-	}
+	list.SetCurrentItem(selected)
 	var txtcontinuos, txtao string
 	if continuous {
-		txtcontinuos = "continuous"
+		txtcontinuos = " continuous"
 	}
 	if audioOnly {
-		txtao = "audio"
+		txtao = " audio"
 	}
 	frame = tview.NewFrame(list).
 		AddText("gotube playlist", true, tview.AlignLeft, tcell.ColorLightCyan).
-		AddText(fmt.Sprintf("%v %v %v", sortby, txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
+		AddText(fmt.Sprintf("%v%v%v", sortby, txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
 		AddText("(q)quit (w)update | (z)continuous (x)audio only | (r)reset (c)clear", false, tview.AlignLeft, tcell.ColorGray).
 		AddText("sort: (a)date (s)view (d)length (f)channel", false, tview.AlignLeft, tcell.ColorGray)
 	frame.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -116,7 +130,7 @@ func renderChannels() {
 	sort.Slice(channels, func(i, j int) bool {
 		return strings.Compare(channels[i].Channel, channels[j].Channel) < 0
 	})
-	list = tview.NewList()
+	list := tview.NewList()
 	list.ShowSecondaryText(false)
 	for _, c := range channels {
 		list.AddItem(fmt.Sprintf("%s", c.Channel), "", rune(0), func() {
@@ -126,7 +140,7 @@ func renderChannels() {
 	}
 	frame = tview.NewFrame(list).
 		AddText("gotube channels", true, tview.AlignLeft, tcell.ColorLightCyan).
-		AddText("(q)quit (w)update (d)delete channel (a)add channel", false, tview.AlignLeft, tcell.ColorGray)
+		AddText("(q)quit (w)update | (a)add channel (d)delete channel", false, tview.AlignLeft, tcell.ColorGray)
 	frame.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case rune('d'):
@@ -135,16 +149,15 @@ func renderChannels() {
 			}
 			name, _ := list.GetItemText(list.GetCurrentItem())
 			deleteChannel(name)
-			renderApp()
-			renderChannels()
+			time.Sleep(time.Second)
+			initApp()
 		case rune('a'):
 			if app != nil {
 				app.Stop()
 			}
 			addChannel()
 			time.Sleep(time.Second)
-			renderApp()
-			renderChannels()
+			initApp()
 		}
 		return event
 	})

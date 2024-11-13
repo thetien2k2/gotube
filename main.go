@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/rivo/tview"
 )
 
 const (
@@ -16,33 +14,17 @@ const (
 	ytdlp        = "/usr/bin/yt-dlp"
 )
 
-var (
-	dataDir       string
-	channels      []Channel
-	videosDb      []Entry
-	playlist      []Entry
-	err           error
-	toggleDate    bool
-	toggleView    bool
-	toggleLength  bool
-	toggleChannel bool
-	continuous    bool
-	audioOnly     bool
-	sortby        string
-	app           *tview.Application
-	list          *tview.List
-	frame         *tview.Frame
-	selected      int
-)
+var dataDir string
 
 func main() {
 	prepareDataDir()
 	readChannels()
 	readVideosDb()
-	renderApp()
+  initApp()
 }
 
 func prepareDataDir() {
+	var err error
 	dataDir, err = os.UserConfigDir()
 	if err != nil {
 		dataDir, err = os.UserHomeDir()

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"sort"
 	"strings"
 )
 
@@ -18,7 +17,7 @@ type Channel struct {
 }
 
 func addChannel() {
-	err = readChannels()
+	err := readChannels()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -43,16 +42,22 @@ func addChannel() {
 			os.Exit(0)
 		}
 	}
+	addEntries(nc.Entries, nc.Channel)
 	nc.Entries = []Entry{}
 	channels = append(channels, nc)
+	saveVideosDb()
 	saveChannelsList()
-	fmt.Println("channel added")
+	fmt.Println("added channel", nc.Channel)
 }
 
 func deleteChannel(name string) {
 	fmt.Printf("remove channel %s ?[y/n]: ", name)
 	var answer string
-	_, err = fmt.Scan(&answer)
+	_, err := fmt.Scan(&answer)
+	if err != nil {
+		fmt.Println("unable read answer")
+		return
+	}
 	if answer != "y" {
 		return
 	}
@@ -64,6 +69,7 @@ func deleteChannel(name string) {
 	}
 	channels = ns
 	saveChannelsList()
+	fmt.Println("deleted channel", name)
 }
 
 func readChannels() error {
@@ -78,14 +84,11 @@ func readChannels() error {
 	if err != nil {
 		return err
 	}
-	sort.Slice(channels, func(i, j int) bool {
-		return strings.Compare(channels[i].Channel, channels[j].Channel) < 0
-	})
 	return nil
 }
 
 func listChannels() {
-	err = readChannels()
+	err := readChannels()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
