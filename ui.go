@@ -62,14 +62,14 @@ func renderPlaylist() {
 		list.AddItem(fmt.Sprintf("%v| %s", i, v.Title),
 			fmt.Sprintf("       %v | %v views | %s | %s", v.Channel, viewcount, d.String(), time.Unix(v.Timestamp, 0).Format(time.DateTime)), rune(0), func() {
 				selected = i
-        var es []Entry
-        if continuous {
-          for i:=selected;i<len(playlist);i++{
-            es = append(es, playlist[i])
-          }
-        }else {
-          es = append(es, playlist[selected])
-        }
+				var es []Entry
+				if continuous {
+					for i := selected; i < len(playlist); i++ {
+						es = append(es, playlist[i])
+					}
+				} else {
+					es = append(es, playlist[selected])
+				}
 				mpv(es)
 				fmt.Println(selected, list.GetItemCount())
 				os.Exit(0)

@@ -20,7 +20,7 @@ func main() {
 	prepareDataDir()
 	readChannels()
 	readVideosDb()
-  initApp()
+	initApp()
 }
 
 func prepareDataDir() {

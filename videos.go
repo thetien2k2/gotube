@@ -247,23 +247,25 @@ func mpv(es []Entry) {
 	}()
 
 	time.Sleep(time.Second)
-	conn := mpvipc.NewConnection(socket)
-	err := conn.Open()
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer conn.Close()
-	if err == nil {
-		events, stopListening := conn.NewEventListener()
-		go func() {
-			conn.WaitUntilClosed()
-			stopListening <- struct{}{}
-		}()
-		for event := range events {
-			if event.Name == "file-loaded" {
-				name, err := conn.Get("filename")
-				if err == nil {
-					mpvFileLoaded(name.(string))
+	if continuous {
+		conn := mpvipc.NewConnection(socket)
+		err := conn.Open()
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer conn.Close()
+		if err == nil {
+			events, stopListening := conn.NewEventListener()
+			go func() {
+				conn.WaitUntilClosed()
+				stopListening <- struct{}{}
+			}()
+			for event := range events {
+				if event.Name == "file-loaded" {
+					name, err := conn.Get("filename")
+					if err == nil {
+						mpvFileLoaded(name.(string))
+					}
 				}
 			}
 		}
