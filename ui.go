@@ -86,7 +86,8 @@ func renderPlaylist() {
 	frame = tview.NewFrame(list).
 		AddText("gotube playlist", true, tview.AlignLeft, tcell.ColorLightCyan).
 		AddText(fmt.Sprintf("%v%v%v", sortby, txtcontinuos, txtao), true, tview.AlignRight, tcell.ColorGray).
-		AddText("(q)quit (w)update | (z)continuous (x)audio only | (r)reset (c)clear", false, tview.AlignLeft, tcell.ColorGray).
+		AddText("(q)quit (w)update (1)playlist (2)channels", false, tview.AlignLeft, tcell.ColorGray).
+		AddText("(z)continuous (x)audio only | (r)reset (c)clear", false, tview.AlignLeft, tcell.ColorGray).
 		AddText("sort: (a)date (s)view (d)length (f)channel", false, tview.AlignLeft, tcell.ColorGray)
 	frame.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
@@ -102,16 +103,16 @@ func renderPlaylist() {
 			selected = 0
 			sortPlaylistByLength()
 			toggleLength = !toggleLength
+		case rune('f'):
+			selected = 0
+			sortPlaylistByChannel()
+			toggleChannel = !toggleChannel
 		case rune('r'):
 			playlist = videosDb
 			renderPlaylist()
 		case rune('c'):
 			playlist = []Entry{}
 			renderPlaylist()
-		case rune('f'):
-			selected = 0
-			sortPlaylistByChannel()
-			toggleChannel = !toggleChannel
 		case rune('z'):
 			continuous = !continuous
 			selected = list.GetCurrentItem()
@@ -140,7 +141,8 @@ func renderChannels() {
 	}
 	frame = tview.NewFrame(list).
 		AddText("gotube channels", true, tview.AlignLeft, tcell.ColorLightCyan).
-		AddText("(q)quit (w)update | (a)add channel (d)delete channel", false, tview.AlignLeft, tcell.ColorGray)
+		AddText("(q)quit (w)update (1)playlist (2)channels", false, tview.AlignLeft, tcell.ColorGray).
+		AddText("(a)add channel (d)delete channel", false, tview.AlignLeft, tcell.ColorGray)
 	frame.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case rune('d'):
